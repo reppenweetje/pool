@@ -150,25 +150,36 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
   // FASE 3: POST-MATCH STREAK BONUSSEN
   // ============================================================================
   
-  // BALLENBAK BIZARRE
-  if (winnerPowerUps.ballenBakBizarre) {
-    newWinnerStreak += opponentBallsRemaining;
+  // BALLENBAK BIZARRE - voor beide spelers
+  if (jessePowerUps.ballenBakBizarre) {
     if (winner === 'Jesse') {
-      jessePlayer.powerUpQuota.ballenBakBizarre--;
-    } else {
-      flipPlayer.powerUpQuota.ballenBakBizarre--;
+      newWinnerStreak += opponentBallsRemaining;
     }
+    jessePlayer.powerUpQuota.ballenBakBizarre--;
+  }
+  
+  if (flipPowerUps.ballenBakBizarre) {
+    if (winner === 'Flip') {
+      newWinnerStreak += opponentBallsRemaining;
+    }
+    flipPlayer.powerUpQuota.ballenBakBizarre--;
   }
 
-  // SNIPER - met succescheck en reeks lengte
-  if (winnerPowerUps.sniper?.successful) {
-    const sniperBonus = calculateSniperBonus(winnerPowerUps.sniper.ballsPotted, newWinnerStreak);
-    newWinnerStreak += sniperBonus;
+  // SNIPER - voor beide spelers
+  if (jessePowerUps.sniper?.successful) {
+    const sniperBonus = calculateSniperBonus(jessePowerUps.sniper.ballsPotted, jessePlayer.streak);
     if (winner === 'Jesse') {
-      jessePlayer.powerUpQuota.sniper--;
-    } else {
-      flipPlayer.powerUpQuota.sniper--;
+      newWinnerStreak += sniperBonus;
     }
+    jessePlayer.powerUpQuota.sniper--;
+  }
+  
+  if (flipPowerUps.sniper?.successful) {
+    const sniperBonus = calculateSniperBonus(flipPowerUps.sniper.ballsPotted, flipPlayer.streak);
+    if (winner === 'Flip') {
+      newWinnerStreak += sniperBonus;
+    }
+    flipPlayer.powerUpQuota.sniper--;
   }
 
   // Update de streaks
@@ -187,16 +198,15 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
   let amountWon = calculateStreakAmount(newWinnerStreak);
   let cappedAmount = false;
 
-  // DOUBLE TROUBLE - verdubbel de inzet als succesvol
-  let doubleTroubleActive = false;
-  if (winnerPowerUps.doubleTrouble?.successful) {
+  // DOUBLE TROUBLE - voor beide spelers
+  if (jessePowerUps.doubleTrouble?.successful && winner === 'Jesse') {
     amountWon *= DOUBLE_TROUBLE_MULTIPLIER;
-    doubleTroubleActive = true;
-    if (winner === 'Jesse') {
-      jessePlayer.powerUpQuota.doubleTrouble--;
-    } else {
-      flipPlayer.powerUpQuota.doubleTrouble--;
-    }
+    jessePlayer.powerUpQuota.doubleTrouble--;
+  }
+  
+  if (flipPowerUps.doubleTrouble?.successful && winner === 'Flip') {
+    amountWon *= DOUBLE_TROUBLE_MULTIPLIER;
+    flipPlayer.powerUpQuota.doubleTrouble--;
   }
 
   // Check anti-faillissement limiet
@@ -218,27 +228,28 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
   // FASE 5: EXTRA BONUSSEN
   // ============================================================================
   
-  // BALLENBAK BONUS (Extra penalty)
+  // BALLENBAK BONUS - voor beide spelers
   let ballenBakBonus = 0;
-  if (winnerPowerUps.ballenBak) {
+  if (jessePowerUps.ballenBak && winner === 'Jesse') {
     ballenBakBonus = opponentBallsRemaining * BALLENBAK_PENALTY_PER_BALL;
-    if (winner === 'Jesse') {
-      jessePlayer.powerUpQuota.ballenBak--;
-    } else {
-      flipPlayer.powerUpQuota.ballenBak--;
-    }
+    jessePlayer.powerUpQuota.ballenBak--;
+  }
+  if (flipPowerUps.ballenBak && winner === 'Flip') {
+    ballenBakBonus = opponentBallsRemaining * BALLENBAK_PENALTY_PER_BALL;
+    flipPlayer.powerUpQuota.ballenBak--;
   }
 
-  // BBC BONUS (zwarte bal bij afstoot power-up)
+  // BBC BONUS - voor beide spelers
   let blackBallBonus = false;
-  if (winnerPowerUps.bbc) {
+  if (jessePowerUps.bbc && winner === 'Jesse') {
     amountWon += BLACK_BALL_BONUS;
     blackBallBonus = true;
-    if (winner === 'Jesse') {
-      jessePlayer.powerUpQuota.bbc--;
-    } else {
-      flipPlayer.powerUpQuota.bbc--;
-    }
+    jessePlayer.powerUpQuota.bbc--;
+  }
+  if (flipPowerUps.bbc && winner === 'Flip') {
+    amountWon += BLACK_BALL_BONUS;
+    blackBallBonus = true;
+    flipPlayer.powerUpQuota.bbc--;
   }
 
   // ============================================================================

@@ -83,7 +83,7 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
     }
 
     // Check if same player is trying to toep again (not allowed)
-    if (liveGame.toepInitiatedBy === player && liveGame.currentToepStake > 1) {
+    if (liveGame.toepInitiatedBy === player && liveGame.currentToepStake > 0) {
       return;
     }
 
@@ -209,6 +209,16 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
     const powerUps = player === 'jesse' ? jessePowerUps : flipPowerUps;
     const playerName = player === 'jesse' ? 'Jesse' : 'Flip';
     
+    // Check quota
+    const playerQuota = gameState?.[player]?.powerUpQuota;
+    if (!playerQuota) return;
+    
+    const quotaKey = powerUp as keyof typeof playerQuota;
+    if (quotaKey in playerQuota && (playerQuota as any)[quotaKey] <= 0) {
+      alert(`${playerName} heeft geen ${powerUp} power-ups meer!`);
+      return;
+    }
+    
     setPowerUps(prev => {
       const newPowerUps = { ...prev };
       if (powerUp in newPowerUps) {
@@ -250,7 +260,7 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
   const currentStake = liveGame?.currentToepStake || 1;
   const jesseCanToep = !liveGame?.toepInitiatedBy || liveGame.toepInitiatedBy === 'Flip';
   const flipCanToep = !liveGame?.toepInitiatedBy || liveGame.toepInitiatedBy === 'Jesse';
-  const toepButtonText = currentStake === 1 ? 'TOEP' : 'OVERTOEP';
+  const toepButtonText = currentStake === 0 ? 'TOEP' : 'OVERTOEP';
 
   return (
     <AnimatePresence>
@@ -264,22 +274,19 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-gradient-to-br from-gray-900 via-poolGreen to-gray-900 rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+          className="bg-gradient-to-br from-gray-900 via-poolGreen to-gray-900 rounded-3xl p-4 max-w-lg w-full max-h-[85vh] overflow-y-auto shadow-2xl"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <Zap className="w-7 h-7 text-yellow-400" fill="currentColor" />
-                Live Potje
-              </h2>
-              <p className="text-sm text-gray-400 mt-1">Real-time gameplay met TOEP</p>
+          {/* Header - Compacter */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Zap className="w-6 h-6 text-yellow-400" fill="currentColor" />
+              <h2 className="text-xl font-bold text-white">Live Potje</h2>
             </div>
             <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-white/10 transition-colors"
             >
-              <X className="w-6 h-6 text-white" />
+              <X className="w-5 h-5 text-white" />
             </button>
           </div>
 
@@ -297,42 +304,41 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
             </div>
           ) : (
             <>
-              {/* Huidige Inzet Indicator */}
+              {/* Huidige Inzet Indicator - Compacter */}
               <motion.div
                 animate={{
-                  scale: currentStake > 1 ? [1, 1.05, 1] : 1,
+                  scale: currentStake > 0 ? [1, 1.03, 1] : 1,
                 }}
-                transition={{ duration: 1, repeat: currentStake > 1 ? Infinity : 0 }}
-                className={`mb-6 p-6 rounded-2xl border-2 ${
-                  currentStake >= 3 ? 'bg-gradient-to-r from-red-900/40 to-orange-900/40 border-red-500/50' :
-                  currentStake === 2 ? 'bg-gradient-to-r from-orange-900/40 to-yellow-900/40 border-orange-500/50' :
+                transition={{ duration: 1, repeat: currentStake > 0 ? Infinity : 0 }}
+                className={`mb-3 p-3 rounded-xl border-2 ${
+                  currentStake >= 2 ? 'bg-gradient-to-r from-red-900/40 to-orange-900/40 border-red-500/50' :
+                  currentStake === 1 ? 'bg-gradient-to-r from-orange-900/40 to-yellow-900/40 border-orange-500/50' :
                   'bg-gradient-to-r from-green-900/40 to-emerald-900/40 border-green-500/50'
                 }`}
               >
-                <div className="flex items-center justify-center gap-3">
-                  <Flame className={`w-8 h-8 ${currentStake >= 2 ? 'text-orange-400' : 'text-green-400'}`} 
-                    fill={currentStake >= 2 ? 'currentColor' : 'none'} />
+                <div className="flex items-center justify-center gap-2">
+                  <Flame className={`w-5 h-5 ${currentStake >= 1 ? 'text-orange-400' : 'text-green-400'}`} 
+                    fill={currentStake >= 1 ? 'currentColor' : 'none'} />
                   <div className="text-center">
-                    <div className="text-sm text-gray-300 font-semibold uppercase">Huidige Inzet</div>
-                    <div className="text-4xl font-black text-white">
-                      {currentStake}x Streak{currentStake > 1 && 's'}
+                    <div className="text-2xl font-black text-white">
+                      {currentStake + 1}x Streak{currentStake + 1 > 1 && 's'}
                     </div>
-                    {currentStake > 1 && (
-                      <div className="text-xs text-orange-200 mt-1">
-                        {currentStake === 2 && '🔥 Getoept!'}
-                        {currentStake === 3 && '🔥🔥 Overgetoept!'}
-                        {currentStake > 3 && `🔥 ${currentStake - 1}x Overgetoept!`}
+                    {currentStake > 0 && (
+                      <div className="text-[10px] text-orange-200">
+                        {currentStake === 1 && '🔥 Getoept!'}
+                        {currentStake === 2 && '🔥🔥 Overgetoept!'}
+                        {currentStake > 2 && `🔥 ${currentStake}x Overgetoept!`}
                       </div>
                     )}
                   </div>
                 </div>
               </motion.div>
 
-              {/* Power-ups Section */}
-              <div className="mb-6 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-2xl p-4 border border-purple-500/30">
-                <div className="flex items-center gap-2 mb-3">
-                  <Sparkles className="w-5 h-5 text-purple-400" />
-                  <h3 className="text-sm font-bold text-purple-300 uppercase">Power-ups tijdens potje</h3>
+              {/* Power-ups Section - Compacter */}
+              <div className="mb-3 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-xl p-3 border border-purple-500/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  <h3 className="text-xs font-bold text-purple-300 uppercase">Power-ups</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   {/* Jesse Power-ups */}
@@ -471,19 +477,19 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                 </div>
               </div>
 
-              {/* Ball Counters */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              {/* Ball Counters - Compacter voor iPhone */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 {/* Jesse */}
                 <motion.div
                   whileHover={{ scale: 1.02 }}
-                  className="p-4 bg-gradient-to-br from-blue-900/30 to-blue-800/30 rounded-2xl border border-blue-500/30"
+                  className="p-3 bg-gradient-to-br from-blue-900/30 to-blue-800/30 rounded-xl border border-blue-500/30"
                 >
-                  <div className="text-center mb-3">
-                    <h3 className="text-lg font-bold text-blue-300">Jesse</h3>
-                    <div className="text-4xl font-black text-white my-2">
+                  <div className="text-center mb-2">
+                    <h3 className="text-sm font-bold text-blue-300">Jesse</h3>
+                    <div className="text-3xl font-black text-white my-1">
                       {liveGame.jesseBallsRemaining}
                     </div>
-                    <div className="text-xs text-gray-400">ballen over</div>
+                    <div className="text-[10px] text-gray-400">ballen</div>
                   </div>
                   <input
                     type="range"
@@ -491,19 +497,19 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                     max="7"
                     value={liveGame.jesseBallsRemaining}
                     onChange={(e) => updateBalls('jesse', Number(e.target.value))}
-                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-3"
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500 mb-2"
                   />
                   {/* Toep Button */}
                   <button
                     onClick={() => handleToep('Jesse')}
                     disabled={!jesseCanToep}
-                    className={`w-full py-3 font-bold rounded-xl transition-all text-sm ${
+                    className={`w-full py-2 font-bold rounded-lg transition-all text-xs ${
                       jesseCanToep
                         ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white shadow-lg'
                         : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    <Zap className="w-4 h-4 inline mr-1" fill={jesseCanToep ? 'currentColor' : 'none'} />
+                    <Zap className="w-3 h-3 inline mr-1" fill={jesseCanToep ? 'currentColor' : 'none'} />
                     {toepButtonText}
                   </button>
                 </motion.div>
@@ -511,14 +517,14 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                 {/* Flip */}
                 <motion.div
                   whileHover={{ scale: 1.02 }}
-                  className="p-4 bg-gradient-to-br from-orange-900/30 to-orange-800/30 rounded-2xl border border-orange-500/30"
+                  className="p-3 bg-gradient-to-br from-orange-900/30 to-orange-800/30 rounded-xl border border-orange-500/30"
                 >
-                  <div className="text-center mb-3">
-                    <h3 className="text-lg font-bold text-orange-300">Flip</h3>
-                    <div className="text-4xl font-black text-white my-2">
+                  <div className="text-center mb-2">
+                    <h3 className="text-sm font-bold text-orange-300">Flip</h3>
+                    <div className="text-3xl font-black text-white my-1">
                       {liveGame.flipBallsRemaining}
                     </div>
-                    <div className="text-xs text-gray-400">ballen over</div>
+                    <div className="text-[10px] text-gray-400">ballen</div>
                   </div>
                   <input
                     type="range"
@@ -526,42 +532,42 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                     max="7"
                     value={liveGame.flipBallsRemaining}
                     onChange={(e) => updateBalls('flip', Number(e.target.value))}
-                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500 mb-3"
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500 mb-2"
                   />
                   {/* Toep Button */}
                   <button
                     onClick={() => handleToep('Flip')}
                     disabled={!flipCanToep}
-                    className={`w-full py-3 font-bold rounded-xl transition-all text-sm ${
+                    className={`w-full py-2 font-bold rounded-lg transition-all text-xs ${
                       flipCanToep
                         ? 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-500 hover:to-orange-500 text-white shadow-lg'
                         : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                     }`}
                   >
-                    <Zap className="w-4 h-4 inline mr-1" fill={flipCanToep ? 'currentColor' : 'none'} />
+                    <Zap className="w-3 h-3 inline mr-1" fill={flipCanToep ? 'currentColor' : 'none'} />
                     {toepButtonText}
                   </button>
                 </motion.div>
               </div>
 
-              {/* Finish Buttons */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Finish Buttons - Compacter */}
+              <div className="grid grid-cols-2 gap-3">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleFinishGame('Jesse')}
-                  className="pool-button bg-gradient-to-br from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-lg"
+                  className="py-4 px-4 rounded-xl bg-gradient-to-br from-blue-600 to-blue-500 text-white hover:from-blue-500 hover:to-blue-400 shadow-lg font-bold text-sm"
                 >
-                  <CheckCircle className="w-6 h-6 inline mr-2" />
+                  <CheckCircle className="w-5 h-5 inline mr-1" />
                   Jesse Wint
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => handleFinishGame('Flip')}
-                  className="pool-button bg-gradient-to-br from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 shadow-lg"
+                  className="py-4 px-4 rounded-xl bg-gradient-to-br from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 shadow-lg font-bold text-sm"
                 >
-                  <CheckCircle className="w-6 h-6 inline mr-2" />
+                  <CheckCircle className="w-5 h-5 inline mr-1" />
                   Flip Wint
                 </motion.button>
               </div>

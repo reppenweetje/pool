@@ -223,6 +223,10 @@ export default function Home() {
     }
 
     try {
+      // Try database reset first
+      const res = await fetch('/api/reset', { method: 'POST' });
+      const result = await res.json();
+      
       // Clear local storage
       const { clearGameState } = await import('@/lib/storage');
       clearGameState();
@@ -233,6 +237,9 @@ export default function Home() {
       
       alert('✅ Alle data is gereset! De competitie begint opnieuw.');
       setShowSettings(false);
+      
+      // Refresh from server
+      fetchGameState();
     } catch (error) {
       console.error('Reset failed:', error);
       alert('Er ging iets mis bij het resetten. Probeer opnieuw.');
@@ -336,10 +343,11 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-6 relative">
             <div className="relative">
               <PlayerCard player={gameState.jesse} isWinning={jesseWinning} />
-              {/* Pull The Plug voor Flip (naast Jesse) */}
-              <div className="absolute -right-6 top-1/2 -translate-y-1/2 z-10">
+              {/* Pull The Plug voor Flip (reset Jesse) */}
+              <div className="absolute -right-8 top-1/2 -translate-y-1/2 z-10 md:-right-10">
                 <PullThePlugButton
-                  player="flip"
+                  playerName="Flip"
+                  targetName="Jesse"
                   available={gameState.flip.powerUpQuota.pullThePlug > 0}
                   onUse={() => handlePullThePlug('jesse')}
                 />
@@ -347,10 +355,11 @@ export default function Home() {
             </div>
             <div className="relative">
               <PlayerCard player={gameState.flip} isWinning={flipWinning} />
-              {/* Pull The Plug voor Jesse (naast Flip) */}
-              <div className="absolute -left-6 top-1/2 -translate-y-1/2 z-10">
+              {/* Pull The Plug voor Jesse (reset Flip) */}
+              <div className="absolute -left-8 top-1/2 -translate-y-1/2 z-10 md:-left-10">
                 <PullThePlugButton
-                  player="jesse"
+                  playerName="Jesse"
+                  targetName="Flip"
                   available={gameState.jesse.powerUpQuota.pullThePlug > 0}
                   onUse={() => handlePullThePlug('flip')}
                 />

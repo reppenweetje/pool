@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS live_games (
   id SERIAL PRIMARY KEY,
   session_id INTEGER REFERENCES game_sessions(id) ON DELETE CASCADE,
   status VARCHAR(20) DEFAULT 'active', -- 'active', 'finished', 'cancelled'
-  current_toep_stake INTEGER DEFAULT 1, -- Huidige inzet multiplier (1 = normaal, 2 = getoept, 3 = overgetoept, etc.)
+  current_toep_stake INTEGER DEFAULT 0, -- Huidige inzet multiplier (0 = nog niet getoept, 1 = getoept, 2 = overgetoept, etc.)
   toep_initiated_by VARCHAR(50), -- Wie heeft getoept
   toep_response VARCHAR(20), -- 'pending', 'accepted', 'rejected'
   jesse_balls_remaining INTEGER DEFAULT 7,

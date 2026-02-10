@@ -2,15 +2,15 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Zap } from 'lucide-react';
 
 interface PullThePlugButtonProps {
-  player: 'jesse' | 'flip';
+  playerName: string;
+  targetName: string;
   available: boolean;
   onUse: () => void;
 }
 
-export default function PullThePlugButton({ player, available, onUse }: PullThePlugButtonProps) {
+export default function PullThePlugButton({ playerName, targetName, available, onUse }: PullThePlugButtonProps) {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleClick = () => {
@@ -29,10 +29,12 @@ export default function PullThePlugButton({ player, available, onUse }: PullTheP
 
   if (!available) {
     return (
-      <div className="opacity-30 cursor-not-allowed">
-        <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
-          <Zap className="w-6 h-6 text-gray-600" />
+      <div className="flex flex-col items-center gap-1 opacity-30">
+        <div className="text-[10px] text-gray-600 font-bold uppercase">{playerName}</div>
+        <div className="w-14 h-14 rounded-full bg-gray-800/50 flex items-center justify-center border-2 border-gray-700">
+          <div className="text-2xl">🌈</div>
         </div>
+        <div className="text-[8px] text-gray-600">Gebruikt</div>
       </div>
     );
   }
@@ -40,30 +42,32 @@ export default function PullThePlugButton({ player, available, onUse }: PullTheP
   return (
     <>
       <motion.button
-        whileHover={{ scale: 1.1, rotate: 5 }}
+        whileHover={{ scale: 1.15, rotate: 10 }}
         whileTap={{ scale: 0.9 }}
         onClick={handleClick}
-        className="relative"
+        className="relative flex flex-col items-center gap-1"
       >
+        <div className="text-[10px] text-white font-bold uppercase tracking-wider">{playerName}</div>
+        
         {/* Rainbow glow effect */}
         <motion.div
           animate={{
             boxShadow: [
-              '0 0 20px rgba(255,0,0,0.5)',
-              '0 0 20px rgba(255,165,0,0.5)',
-              '0 0 20px rgba(255,255,0,0.5)',
-              '0 0 20px rgba(0,255,0,0.5)',
-              '0 0 20px rgba(0,0,255,0.5)',
-              '0 0 20px rgba(75,0,130,0.5)',
-              '0 0 20px rgba(238,130,238,0.5)',
-              '0 0 20px rgba(255,0,0,0.5)',
+              '0 0 30px rgba(255,0,0,0.8)',
+              '0 0 30px rgba(255,165,0,0.8)',
+              '0 0 30px rgba(255,255,0,0.8)',
+              '0 0 30px rgba(0,255,0,0.8)',
+              '0 0 30px rgba(0,0,255,0.8)',
+              '0 0 30px rgba(75,0,130,0.8)',
+              '0 0 30px rgba(238,130,238,0.8)',
+              '0 0 30px rgba(255,0,0,0.8)',
             ],
           }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-          className="absolute inset-0 rounded-full"
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          className="absolute inset-0 rounded-full top-5"
         />
         
-        {/* Button */}
+        {/* Rainbow Button */}
         <motion.div
           animate={{
             background: [
@@ -77,10 +81,18 @@ export default function PullThePlugButton({ player, available, onUse }: PullTheP
               'linear-gradient(357deg, #ff0000, #ff7f00)',
             ],
           }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
-          className="w-12 h-12 rounded-full flex items-center justify-center relative"
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+          className="w-14 h-14 rounded-full flex items-center justify-center relative border-2 border-white shadow-2xl"
         >
-          <Zap className="w-7 h-7 text-white" fill="white" />
+          <div className="text-3xl">🌈</div>
+        </motion.div>
+        
+        <motion.div
+          animate={{ opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 1, repeat: Infinity }}
+          className="text-[8px] text-white font-bold uppercase tracking-wide"
+        >
+          PLUG
         </motion.div>
       </motion.button>
 
@@ -98,14 +110,17 @@ export default function PullThePlugButton({ player, available, onUse }: PullTheP
             onClick={(e) => e.stopPropagation()}
             className="bg-gradient-to-br from-gray-900 to-red-900 rounded-3xl p-8 max-w-md border-4 border-red-500"
           >
-            <h2 className="text-3xl font-black text-white text-center mb-4">
-              ⚡ PULL THE PLUG ⚡
-            </h2>
-            <p className="text-white text-center mb-6">
-              Weet je zeker dat je {player === 'jesse' ? 'Flip' : 'Jesse'}&apos;s streak wilt resetten naar 0?
+            <div className="text-center mb-4">
+              <div className="text-6xl mb-2">🌈</div>
+              <h2 className="text-3xl font-black text-white">
+                PULL THE PLUG
+              </h2>
+            </div>
+            <p className="text-white text-center mb-2 text-xl font-bold">
+              {playerName} reset {targetName}&apos;s streak naar 0!
             </p>
             <p className="text-sm text-gray-400 text-center mb-6 italic">
-              Dit kan maar 1x per maand!
+              Dit kan maar 1x per maand! Weet je het zeker?
             </p>
             <div className="grid grid-cols-2 gap-4">
               <button

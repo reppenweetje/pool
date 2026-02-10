@@ -23,8 +23,9 @@ export default function ToepModal({
 }: ToepModalProps) {
   if (!isOpen) return null;
 
-  const isFirstToep = currentStake === 1;
+  const isFirstToep = currentStake === 0;
   const actionWord = isFirstToep ? 'GETOEPT' : 'OVERGETOEPT';
+  const newStake = currentStake + 1;
 
   return (
     <AnimatePresence>
@@ -109,13 +110,13 @@ export default function ToepModal({
               transition={{ duration: 1, repeat: Infinity }}
               className="text-5xl font-black text-yellow-400 mb-3"
             >
-              {currentStake + 1}x STREAKS
+              {newStake}x STREAKS
             </motion.div>
             <p className="text-lg text-gray-300 mb-2">
               <span className="font-bold text-white">{responder}</span>, accepteer je deze toep?
             </p>
             <p className="text-sm text-gray-400 italic">
-              De winnaar krijgt {currentStake + 1} streak{currentStake + 1 > 1 ? 's' : ''} in plaats van 1
+              De winnaar krijgt {newStake} streak{newStake > 1 ? 's' : ''} in plaats van 1
             </p>
           </div>
 
@@ -130,7 +131,7 @@ export default function ToepModal({
               <Check className="w-8 h-8" />
               <div className="text-lg font-black">ACCEPTEREN</div>
               <div className="text-xs opacity-90">
-                Speel om {currentStake + 1} streak{currentStake + 1 > 1 ? 's' : ''}
+                Speel om {newStake} streak{newStake > 1 ? 's' : ''}
               </div>
             </motion.button>
             <motion.button
