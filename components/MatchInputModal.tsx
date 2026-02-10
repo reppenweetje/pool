@@ -10,7 +10,7 @@ interface MatchInputModalProps {
   onClose: () => void;
   onSubmit: (data: {
     winner: PlayerName;
-    winCondition: WinCondition;
+    winCondition: 'normal';
     opponentBallsRemaining: number;
     powerUpsUsed: {
       jesse?: PowerUpUsage;
