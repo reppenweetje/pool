@@ -60,7 +60,24 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
   const startLiveGame = async () => {
     setLoading(true);
     try {
-      // ALTIJD een nieuwe game maken (oude wordt gecancelled in createLiveGame)
+      // Check if there's already an active game and cancel it first
+      const checkRes = await fetch('/api/live-game');
+      const existingGame = await checkRes.json();
+      
+      if (existingGame && !existingGame.error && existingGame.id) {
+        // Cancel the old game explicitly
+        await fetch('/api/live-game', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            liveGameId: existingGame.id,
+            status: 'cancelled',
+          }),
+        });
+      }
+      
+      // ALTIJD een nieuwe game maken (oude wordt ook gecancelled in createLiveGame)
       const res = await fetch('/api/live-game', { method: 'POST' });
       
       if (!res.ok) {
@@ -69,6 +86,7 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
       }
       
       const newGame = await res.json();
+      console.log('New game created with stake:', newGame.currentToepStake); // Debug
       setLiveGame(newGame);
       
       // Reset power-ups state voor nieuwe game
@@ -268,7 +286,10 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
   if (!isOpen) return null;
 
   const responder = liveGame?.toepInitiatedBy === 'Jesse' ? 'Flip' : 'Jesse';
-  const currentStake = liveGame?.currentToepStake || 0;
+  const currentStake = liveGame?.currentToepStake ?? 0; // ?? ipv || om 0 correct te hanteren
+  
+  // Debug log
+  console.log('LiveGame state:', { currentStake, toepInitiatedBy: liveGame?.toepInitiatedBy, toepResponse: liveGame?.toepResponse });
   
   // Jesse kan toepen als:
   // 1. Er is geen pending toep (toepResponse !== 'pending')
@@ -283,6 +304,7 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
     (!liveGame?.toepInitiatedBy || liveGame.toepInitiatedBy === 'Jesse');
   
   const toepButtonText = currentStake === 0 ? 'TOEP' : 'OVERTOEP';
+  console.log('Button text:', toepButtonText, 'for stake:', currentStake);
 
   return (
     <AnimatePresence>
