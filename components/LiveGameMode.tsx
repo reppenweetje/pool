@@ -145,8 +145,21 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
       const winner = liveGame.toepInitiatedBy!;
       
       setTimeout(() => {
-        onFinish(winner, liveGame.jesseBallsRemaining, liveGame.flipBallsRemaining, 1);
+        onFinish(
+          winner, 
+          liveGame.jesseBallsRemaining, 
+          liveGame.flipBallsRemaining, 
+          1,
+          {
+            jesse: Object.keys(jessePowerUps).length > 0 ? jessePowerUps : undefined,
+            flip: Object.keys(flipPowerUps).length > 0 ? flipPowerUps : undefined,
+          }
+        );
         onClose();
+        
+        // Reset power-ups
+        setJessePowerUps({});
+        setFlipPowerUps({});
       }, 500);
     } catch (error) {
       console.error('Failed to reject toep:', error);
