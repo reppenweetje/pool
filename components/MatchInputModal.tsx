@@ -24,7 +24,6 @@ interface MatchInputModalProps {
 
 export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }: MatchInputModalProps) {
   const [winner, setWinner] = useState<PlayerName | null>(null);
-  const [winCondition, setWinCondition] = useState<WinCondition>('normal');
   const [opponentBalls, setOpponentBalls] = useState(7);
   const [jesseOwnBalls, setJesseOwnBalls] = useState(0);
   const [flipOwnBalls, setFlipOwnBalls] = useState(0);
@@ -38,7 +37,7 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
 
     onSubmit({
       winner,
-      winCondition,
+      winCondition: 'normal',
       opponentBallsRemaining: opponentBalls,
       powerUpsUsed: {
         jesse: Object.keys(jessePowerUps).length > 0 ? jessePowerUps : undefined,
@@ -50,7 +49,6 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
 
     // Reset form
     setWinner(null);
-    setWinCondition('normal');
     setOpponentBalls(7);
     setJesseOwnBalls(0);
     setFlipOwnBalls(0);
@@ -168,43 +166,6 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
 
           {winner && (
             <>
-              {/* Win Condition */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
-                  Hoe gewonnen?
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    onClick={() => setWinCondition('normal')}
-                    className={`p-4 rounded-xl font-bold transition-all ${
-                      winCondition === 'normal'
-                        ? 'bg-blue-600 text-white ring-2 ring-blue-400'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    Normaal
-                  </button>
-                  <button
-                    onClick={() => setWinCondition('blackBall')}
-                    className={`p-4 rounded-xl font-bold transition-all ${
-                      winCondition === 'blackBall'
-                        ? 'bg-black text-yellow-400 ring-2 ring-yellow-400'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    BB - Zwarte Bal +€5
-                  </button>
-                </div>
-                {winCondition === 'blackBall' && (
-                  <div className="mt-2 p-3 bg-yellow-900/30 border border-yellow-600 rounded-lg flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-yellow-200">
-                      {loser} potte de zwarte bal te vroeg of in het verkeerde gat. {winner} krijgt +€5 bonus!
-                    </p>
-                  </div>
-                )}
-              </div>
-
               {/* Ballen verliezer */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
@@ -367,6 +328,18 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
                       Speedpot ({gameState.jesse.powerUpQuota.speedpot})
                     </button>
                   )}
+                  {gameState.jesse.powerUpQuota.bbc > 0 && (
+                    <button
+                      onClick={() => toggleJessePowerUp('bbc')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        jessePowerUps.bbc
+                          ? 'bg-black text-yellow-400 ring-2 ring-yellow-400'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      BBC +€5 ({gameState.jesse.powerUpQuota.bbc})
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -470,6 +443,18 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
                       }`}
                     >
                       Speedpot ({gameState.flip.powerUpQuota.speedpot})
+                    </button>
+                  )}
+                  {gameState.flip.powerUpQuota.bbc > 0 && (
+                    <button
+                      onClick={() => toggleFlipPowerUp('bbc')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        flipPowerUps.bbc
+                          ? 'bg-black text-yellow-400 ring-2 ring-yellow-400'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      BBC +€5 ({gameState.flip.powerUpQuota.bbc})
                     </button>
                   )}
                 </div>

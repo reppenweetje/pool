@@ -121,7 +121,7 @@ export default function Home() {
     }
   };
 
-  const handleLiveGameFinish = async (winner: PlayerName, jesseBalls: number, flipBalls: number) => {
+  const handleLiveGameFinish = async (winner: PlayerName, jesseBalls: number, flipBalls: number, toepStake: number) => {
     // Fetch live game voor toep stake
     try {
       const liveRes = await fetch('/api/live-game');
@@ -131,8 +131,8 @@ export default function Home() {
       const loser: PlayerName = winner === 'Jesse' ? 'Flip' : 'Jesse';
       const opponentBalls = winner === 'Jesse' ? flipBalls : jesseBalls;
 
-      // Als toep geweigerd werd, gebruik stake 1, anders gebruik de toep stake
-      const actualStake = liveGame?.toepResponse === 'rejected' ? 1 : toepStake;
+      // Use the toepStake directly (already handled in LiveGameMode)
+      const actualStake = toepStake;
 
       // Save match via API met toep multiplier
       const res = await fetch('/api/matches', {

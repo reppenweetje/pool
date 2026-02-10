@@ -21,8 +21,8 @@ CREATE TABLE IF NOT EXISTS game_sessions (
   flip_streak INTEGER DEFAULT 0,
   jesse_monthly_total DECIMAL(10,2) DEFAULT 0,
   flip_monthly_total DECIMAL(10,2) DEFAULT 0,
-  jesse_power_ups JSONB DEFAULT '{"ballenBakBizarre":1,"cumbackKid":1,"toep":5,"ballenBak":5,"pullThePlug":1,"sniper":3,"speedpot":2,"doubleTrouble":2}',
-  flip_power_ups JSONB DEFAULT '{"ballenBakBizarre":1,"cumbackKid":1,"toep":5,"ballenBak":5,"pullThePlug":1,"sniper":3,"speedpot":2,"doubleTrouble":2}',
+  jesse_power_ups JSONB DEFAULT '{"ballenBakBizarre":1,"cumbackKid":1,"toep":5,"ballenBak":5,"pullThePlug":1,"sniper":3,"speedpot":2,"doubleTrouble":2,"bbc":3}',
+  flip_power_ups JSONB DEFAULT '{"ballenBakBizarre":1,"cumbackKid":1,"toep":5,"ballenBak":5,"pullThePlug":1,"sniper":3,"speedpot":2,"doubleTrouble":2,"bbc":3}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(month)

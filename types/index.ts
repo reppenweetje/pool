@@ -7,13 +7,13 @@ export type PlayerName = 'Jesse' | 'Flip';
 export interface PowerUpQuota {
   ballenBakBizarre: number;      // 1x per maand
   cumbackKid: number;             // 1x per maand
-  toep: number;                   // 5x per maand
+  toep: number;                   // 5x per maand - KOST 1 bij gebruik in Live Mode
   ballenBak: number;              // 5x per maand
   pullThePlug: number;            // 1x per maand
   sniper: number;                 // 3x per maand
   speedpot: number;               // 2x per maand
   doubleTrouble: number;          // 2x per maand
-  // BBC is onbeperkt, dus geen quota
+  bbc: number;                    // 3x per maand - zwarte bal bij afstoot
 }
 
 export const INITIAL_POWER_UP_QUOTA: PowerUpQuota = {
@@ -25,12 +25,13 @@ export const INITIAL_POWER_UP_QUOTA: PowerUpQuota = {
   sniper: 3,
   speedpot: 2,
   doubleTrouble: 2,
+  bbc: 3,
 };
 
 export interface PowerUpUsage {
   ballenBakBizarre?: boolean;     // streak += tegenstander ballen
   cumbackKid?: boolean;           // streak = andere speler streak - 1
-  toep?: boolean;                 // Eigen streak +1
+  toep?: boolean;                 // Eigen streak +1 (NIET in Live Mode - daar kost het quota)
   ballenBak?: boolean;            // Tegenstander betaalt €2 per bal
   pullThePlug?: boolean;          // Reset tegenstander streak naar 0
   sniper?: {                      // Bonus voor reeksen
@@ -42,9 +43,10 @@ export interface PowerUpUsage {
     ballsPotted: number;          // Aantal ballen gepot
     successful: boolean;          // Was de poging succesvol?
   };
+  bbc?: boolean;                  // Zwarte bal erin bij afstoot = +€5
 }
 
-export type WinCondition = 'normal' | 'blackBall'; // normal = normaal gewonnen, blackBall = tegenstander potte zwarte bal te vroeg
+export type WinCondition = 'normal'; // Alleen normaal - BB is nu een power-up
 
 export interface Player {
   name: PlayerName;
