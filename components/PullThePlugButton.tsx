@@ -29,12 +29,12 @@ export default function PullThePlugButton({ playerName, targetName, available, o
 
   if (!available) {
     return (
-      <div className="flex flex-col items-center gap-1 opacity-30">
-        <div className="text-[10px] text-gray-600 font-bold uppercase">{playerName}</div>
-        <div className="w-14 h-14 rounded-full bg-gray-800/50 flex items-center justify-center border-2 border-gray-700">
-          <div className="text-2xl">🌈</div>
+      <div className="flex flex-col items-center gap-0.5 opacity-30">
+        <div className="text-[8px] md:text-[9px] text-gray-600 font-bold uppercase">{playerName}</div>
+        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gray-800/50 flex items-center justify-center border-2 border-gray-700">
+          <div className="text-xl md:text-2xl">🌈</div>
         </div>
-        <div className="text-[8px] text-gray-600">Gebruikt</div>
+        <div className="text-[7px] md:text-[8px] text-gray-600">Gebruikt</div>
       </div>
     );
   }
@@ -42,32 +42,32 @@ export default function PullThePlugButton({ playerName, targetName, available, o
   return (
     <>
       <motion.button
-        whileHover={{ scale: 1.15, rotate: 10 }}
+        whileHover={{ scale: 1.1, rotate: 10 }}
         whileTap={{ scale: 0.9 }}
         onClick={handleClick}
-        className="relative flex flex-col items-center gap-1"
+        className="relative flex flex-col items-center gap-0.5"
       >
-        <div className="text-[10px] text-white font-bold uppercase tracking-wider">{playerName}</div>
+        <div className="text-[8px] md:text-[9px] text-white font-bold uppercase tracking-wider">{playerName}</div>
         
         {/* Rainbow glow effect */}
         <motion.div
           animate={{
             boxShadow: [
-              '0 0 30px rgba(255,0,0,0.8)',
-              '0 0 30px rgba(255,165,0,0.8)',
-              '0 0 30px rgba(255,255,0,0.8)',
-              '0 0 30px rgba(0,255,0,0.8)',
-              '0 0 30px rgba(0,0,255,0.8)',
-              '0 0 30px rgba(75,0,130,0.8)',
-              '0 0 30px rgba(238,130,238,0.8)',
-              '0 0 30px rgba(255,0,0,0.8)',
+              '0 0 20px rgba(255,0,0,0.6)',
+              '0 0 20px rgba(255,165,0,0.6)',
+              '0 0 20px rgba(255,255,0,0.6)',
+              '0 0 20px rgba(0,255,0,0.6)',
+              '0 0 20px rgba(0,0,255,0.6)',
+              '0 0 20px rgba(75,0,130,0.6)',
+              '0 0 20px rgba(238,130,238,0.6)',
+              '0 0 20px rgba(255,0,0,0.6)',
             ],
           }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          className="absolute inset-0 rounded-full top-5"
+          className="absolute inset-0 rounded-full top-3 md:top-4"
         />
         
-        {/* Rainbow Button */}
+        {/* Rainbow Button - Kleiner voor mobile */}
         <motion.div
           animate={{
             background: [
@@ -82,15 +82,15 @@ export default function PullThePlugButton({ playerName, targetName, available, o
             ],
           }}
           transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
-          className="w-14 h-14 rounded-full flex items-center justify-center relative border-2 border-white shadow-2xl"
+          className="w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center relative border-2 border-white shadow-xl"
         >
-          <div className="text-3xl">🌈</div>
+          <div className="text-2xl md:text-2xl">🌈</div>
         </motion.div>
         
         <motion.div
           animate={{ opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 1, repeat: Infinity }}
-          className="text-[8px] text-white font-bold uppercase tracking-wide"
+          className="text-[7px] md:text-[8px] text-white font-bold uppercase tracking-wide"
         >
           PLUG
         </motion.div>

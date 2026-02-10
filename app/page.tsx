@@ -338,23 +338,15 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Player Cards with Pull The Plug */}
+      {/* Player Cards - Mobile Optimized */}
       {!showHistory && (
-        <div className="max-w-4xl mx-auto mb-6">
-          <div className="grid md:grid-cols-2 gap-6 relative">
-            <div className="relative">
+        <div className="max-w-4xl mx-auto mb-6 px-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Jesse */}
+            <div className="flex flex-col gap-3">
               <PlayerCard player={gameState.jesse} isWinning={jesseWinning} />
-              {/* Pull The Plug voor Flip (reset Jesse) - rechts boven */}
-              <div className="absolute -right-8 top-[30%] -translate-y-1/2 z-10 md:-right-10">
-                <PullThePlugButton
-                  playerName="Flip"
-                  targetName="Jesse"
-                  available={gameState.flip.powerUpQuota.pullThePlug > 0}
-                  onUse={() => handlePullThePlug('jesse')}
-                />
-              </div>
-              {/* Cumback Kid voor Jesse - rechts onder */}
-              <div className="absolute -right-8 top-[70%] -translate-y-1/2 z-10 md:-right-10">
+              {/* Pre-match Power-ups ONDER de card */}
+              <div className="flex items-center justify-center gap-3">
                 <CumbackKidButton
                   playerName="Jesse"
                   opponentName="Flip"
@@ -363,21 +355,20 @@ export default function Home() {
                   available={gameState.jesse.powerUpQuota.cumbackKid > 0}
                   onUse={() => handleCumbackKid('jesse')}
                 />
-              </div>
-            </div>
-            <div className="relative">
-              <PlayerCard player={gameState.flip} isWinning={flipWinning} />
-              {/* Pull The Plug voor Jesse (reset Flip) - links boven */}
-              <div className="absolute -left-8 top-[30%] -translate-y-1/2 z-10 md:-left-10">
                 <PullThePlugButton
-                  playerName="Jesse"
-                  targetName="Flip"
-                  available={gameState.jesse.powerUpQuota.pullThePlug > 0}
-                  onUse={() => handlePullThePlug('flip')}
+                  playerName="Flip"
+                  targetName="Jesse"
+                  available={gameState.flip.powerUpQuota.pullThePlug > 0}
+                  onUse={() => handlePullThePlug('jesse')}
                 />
               </div>
-              {/* Cumback Kid voor Flip - links onder */}
-              <div className="absolute -left-8 top-[70%] -translate-y-1/2 z-10 md:-left-10">
+            </div>
+            
+            {/* Flip */}
+            <div className="flex flex-col gap-3">
+              <PlayerCard player={gameState.flip} isWinning={flipWinning} />
+              {/* Pre-match Power-ups ONDER de card */}
+              <div className="flex items-center justify-center gap-3">
                 <CumbackKidButton
                   playerName="Flip"
                   opponentName="Jesse"
@@ -385,6 +376,12 @@ export default function Home() {
                   opponentStreak={gameState.jesse.streak}
                   available={gameState.flip.powerUpQuota.cumbackKid > 0}
                   onUse={() => handleCumbackKid('flip')}
+                />
+                <PullThePlugButton
+                  playerName="Jesse"
+                  targetName="Flip"
+                  available={gameState.jesse.powerUpQuota.pullThePlug > 0}
+                  onUse={() => handlePullThePlug('flip')}
                 />
               </div>
             </div>
@@ -407,26 +404,26 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Floating Action Buttons - Live Mode is primair */}
-      <div className="fixed bottom-8 right-8 flex flex-col gap-3">
-        {/* Live Game Button - GROOT en primair */}
+      {/* Floating Action Buttons - Mobile optimized */}
+      <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 flex flex-col gap-2 md:gap-3 z-40">
+        {/* Live Game Button - Kleiner op mobile */}
         <motion.button
-          whileHover={{ scale: 1.08 }}
+          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           animate={{
             boxShadow: [
-              '0 0 20px rgba(250, 204, 21, 0.5)',
-              '0 0 40px rgba(251, 146, 60, 0.7)',
-              '0 0 20px rgba(250, 204, 21, 0.5)',
+              '0 0 15px rgba(250, 204, 21, 0.4)',
+              '0 0 25px rgba(251, 146, 60, 0.6)',
+              '0 0 15px rgba(250, 204, 21, 0.4)',
             ],
           }}
           transition={{ duration: 2, repeat: Infinity }}
           onClick={() => setIsLiveMode(true)}
-          className="w-20 h-20 bg-gradient-to-br from-yellow-500 via-orange-500 to-orange-600 rounded-full shadow-2xl flex items-center justify-center text-white relative"
+          className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-yellow-500 via-orange-500 to-orange-600 rounded-full shadow-xl flex items-center justify-center text-white relative"
           title="Live Potje (met TOEP)"
         >
-          <Zap className="w-10 h-10" fill="currentColor" />
-          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+          <Zap className="w-8 h-8 md:w-10 md:h-10" fill="currentColor" />
+          <div className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 bg-red-500 text-white text-[9px] md:text-[10px] font-black px-1 md:px-1.5 py-0.5 rounded-full">
             LIVE
           </div>
         </motion.button>
@@ -436,10 +433,10 @@ export default function Home() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsModalOpen(true)}
-          className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full shadow-lg flex items-center justify-center text-gray-300 hover:shadow-green-500/30 transition-all opacity-70 hover:opacity-100"
+          className="w-11 h-11 md:w-12 md:h-12 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full shadow-lg flex items-center justify-center text-gray-300 hover:shadow-green-500/30 transition-all opacity-70 hover:opacity-100"
           title="Reeds gespeeld potje toevoegen"
         >
-          <Plus className="w-6 h-6" />
+          <Plus className="w-5 h-5 md:w-6 md:h-6" />
         </motion.button>
       </div>
 

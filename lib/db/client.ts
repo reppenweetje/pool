@@ -206,10 +206,10 @@ export async function createLiveGame(): Promise<LiveGame> {
       WHERE session_id = ${sessionId} AND status = 'active'
     `;
 
-    // Create new live game
+    // Create new live game - expliciet current_toep_stake op 0 zetten!
     const { rows } = await sql`
-      INSERT INTO live_games (session_id)
-      VALUES (${sessionId})
+      INSERT INTO live_games (session_id, current_toep_stake)
+      VALUES (${sessionId}, 0)
       RETURNING *
     `;
 

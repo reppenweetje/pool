@@ -37,12 +37,12 @@ export default function CumbackKidButton({
 
   if (!available) {
     return (
-      <div className="flex flex-col items-center gap-1 opacity-30">
-        <div className="text-[10px] text-gray-600 font-bold uppercase">{playerName}</div>
-        <div className="w-14 h-14 rounded-full bg-gray-800/50 flex items-center justify-center border-2 border-gray-700">
-          <div className="text-2xl">🔴</div>
+      <div className="flex flex-col items-center gap-0.5 opacity-30">
+        <div className="text-[8px] md:text-[9px] text-gray-600 font-bold uppercase">{playerName}</div>
+        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gray-800/50 flex items-center justify-center border-2 border-gray-700">
+          <div className="text-xl md:text-2xl">🔴</div>
         </div>
-        <div className="text-[8px] text-gray-600">Gebruikt</div>
+        <div className="text-[7px] md:text-[8px] text-gray-600">Gebruikt</div>
       </div>
     );
   }
@@ -50,37 +50,37 @@ export default function CumbackKidButton({
   return (
     <>
       <motion.button
-        whileHover={{ scale: 1.15, rotate: -10 }}
+        whileHover={{ scale: 1.1, rotate: -10 }}
         whileTap={{ scale: 0.9 }}
         onClick={handleClick}
-        className="relative flex flex-col items-center gap-1"
+        className="relative flex flex-col items-center gap-0.5"
       >
-        <div className="text-[10px] text-white font-bold uppercase tracking-wider">{playerName}</div>
+        <div className="text-[8px] md:text-[9px] text-white font-bold uppercase tracking-wider">{playerName}</div>
         
         {/* Rode glow effect */}
         <motion.div
           animate={{
             boxShadow: [
-              '0 0 20px rgba(220,38,38,0.6)',
-              '0 0 30px rgba(239,68,68,0.8)',
-              '0 0 20px rgba(220,38,38,0.6)',
+              '0 0 15px rgba(220,38,38,0.5)',
+              '0 0 20px rgba(239,68,68,0.7)',
+              '0 0 15px rgba(220,38,38,0.5)',
             ],
           }}
           transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute inset-0 rounded-full top-5"
+          className="absolute inset-0 rounded-full top-3 md:top-4"
         />
         
-        {/* Rode Button met geel puntje */}
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center relative border-2 border-red-400 shadow-2xl">
-          <div className="text-3xl">🔴</div>
+        {/* Rode Button met geel puntje - Kleiner voor mobile */}
+        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-red-600 to-red-700 flex items-center justify-center relative border-2 border-red-400 shadow-xl">
+          <div className="text-2xl md:text-2xl">🔴</div>
           {/* Geel accent puntje */}
-          <div className="absolute top-2 right-2 w-2 h-2 bg-yellow-400 rounded-full"></div>
+          <div className="absolute top-1.5 right-1.5 md:top-2 md:right-2 w-1.5 h-1.5 md:w-2 md:h-2 bg-yellow-400 rounded-full"></div>
         </div>
         
         <motion.div
           animate={{ opacity: [0.7, 1, 0.7] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="text-[8px] text-white font-bold uppercase tracking-wide"
+          className="text-[7px] md:text-[8px] text-white font-bold uppercase tracking-wide"
         >
           CUMBACK
         </motion.div>
