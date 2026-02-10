@@ -344,8 +344,8 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-6 relative">
             <div className="relative">
               <PlayerCard player={gameState.jesse} isWinning={jesseWinning} />
-              {/* Pull The Plug voor Flip (reset Jesse) */}
-              <div className="absolute -right-8 top-1/2 -translate-y-1/2 z-10 md:-right-10">
+              {/* Pull The Plug voor Flip (reset Jesse) - rechts boven */}
+              <div className="absolute -right-8 top-[30%] -translate-y-1/2 z-10 md:-right-10">
                 <PullThePlugButton
                   playerName="Flip"
                   targetName="Jesse"
@@ -353,16 +353,38 @@ export default function Home() {
                   onUse={() => handlePullThePlug('jesse')}
                 />
               </div>
+              {/* Cumback Kid voor Jesse - rechts onder */}
+              <div className="absolute -right-8 top-[70%] -translate-y-1/2 z-10 md:-right-10">
+                <CumbackKidButton
+                  playerName="Jesse"
+                  opponentName="Flip"
+                  playerStreak={gameState.jesse.streak}
+                  opponentStreak={gameState.flip.streak}
+                  available={gameState.jesse.powerUpQuota.cumbackKid > 0}
+                  onUse={() => handleCumbackKid('jesse')}
+                />
+              </div>
             </div>
             <div className="relative">
               <PlayerCard player={gameState.flip} isWinning={flipWinning} />
-              {/* Pull The Plug voor Jesse (reset Flip) */}
-              <div className="absolute -left-8 top-1/2 -translate-y-1/2 z-10 md:-left-10">
+              {/* Pull The Plug voor Jesse (reset Flip) - links boven */}
+              <div className="absolute -left-8 top-[30%] -translate-y-1/2 z-10 md:-left-10">
                 <PullThePlugButton
                   playerName="Jesse"
                   targetName="Flip"
                   available={gameState.jesse.powerUpQuota.pullThePlug > 0}
                   onUse={() => handlePullThePlug('flip')}
+                />
+              </div>
+              {/* Cumback Kid voor Flip - links onder */}
+              <div className="absolute -left-8 top-[70%] -translate-y-1/2 z-10 md:-left-10">
+                <CumbackKidButton
+                  playerName="Flip"
+                  opponentName="Jesse"
+                  playerStreak={gameState.flip.streak}
+                  opponentStreak={gameState.jesse.streak}
+                  available={gameState.flip.powerUpQuota.cumbackKid > 0}
+                  onUse={() => handleCumbackKid('flip')}
                 />
               </div>
             </div>
