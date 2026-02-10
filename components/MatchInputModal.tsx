@@ -229,7 +229,7 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
-                    Jesse's ballen
+                    Jesse&apos;s ballen
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -247,7 +247,7 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
-                    Flip's ballen
+                    Flip&apos;s ballen
                   </label>
                   <div className="flex items-center gap-2">
                     <input
