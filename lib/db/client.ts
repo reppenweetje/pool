@@ -285,13 +285,26 @@ export async function initiateToep(liveGameId: number, player: 'Jesse' | 'Flip')
 
 export async function respondToToep(liveGameId: number, response: 'accepted' | 'rejected'): Promise<void> {
   try {
-    await sql`
-      UPDATE live_games
-      SET 
-        toep_response = ${response},
-        last_action_at = NOW()
-      WHERE id = ${liveGameId}
-    `;
+    // Bij accepted: reset toep state zodat overtoep mogelijk is
+    // Bij rejected: game eindigt dus maakt niet uit
+    if (response === 'accepted') {
+      await sql`
+        UPDATE live_games
+        SET 
+          toep_response = NULL,
+          toep_initiated_by = NULL,
+          last_action_at = NOW()
+        WHERE id = ${liveGameId}
+      `;
+    } else {
+      await sql`
+        UPDATE live_games
+        SET 
+          toep_response = ${response},
+          last_action_at = NOW()
+        WHERE id = ${liveGameId}
+      `;
+    }
   } catch (error) {
     console.error('Failed to respond to toep:', error);
     throw error;

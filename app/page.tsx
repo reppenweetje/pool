@@ -217,32 +217,43 @@ export default function Home() {
   const handleCumbackKid = async (userPlayer: 'jesse' | 'flip') => {
     if (!gameState) return;
     
-    // Cumback Kid: verliezer benadert streak van winnaar
-    // We doen dit door een dummy match te maken waarbij de andere speler wint
-    // en deze speler Cumback Kid gebruikt als verliezer
-    const { calculateMatch } = await import('@/lib/streakEngine');
-    const { saveGameState } = await import('@/lib/storage');
-    
+    // Cumback Kid: speler benadert streak van tegenstander
+    // Direct streak aanpassen zonder dummy match
     const otherPlayer: PlayerName = userPlayer === 'jesse' ? 'Flip' : 'Jesse';
+    const opponentStreak = userPlayer === 'jesse' ? gameState.flip.streak : gameState.jesse.streak;
+    const newStreak = Math.max(0, opponentStreak - 1);
     
-    const powerUpsUsed = {
-      [userPlayer]: { cumbackKid: true } as PowerUpUsage,
+    const newGameState = {
+      ...gameState,
+      [userPlayer]: {
+        ...gameState[userPlayer],
+        streak: newStreak,
+        powerUpQuota: {
+          ...gameState[userPlayer].powerUpQuota,
+          cumbackKid: gameState[userPlayer].powerUpQuota.cumbackKid - 1,
+        },
+      },
     };
     
-    // Create a dummy match with Cumback Kid
-    const result = calculateMatch({
-      gameState,
-      winner: otherPlayer,
-      winCondition: 'normal',
-      opponentBallsRemaining: 0,
-      powerUpsUsed,
-      jesseOwnBalls: 0,
-      flipOwnBalls: 0,
-      toepStakeMultiplier: 0,
-    });
+    setGameState(newGameState);
     
-    setGameState(result.newGameState);
-    saveGameState(result.newGameState);
+    // Save to database and local storage
+    try {
+      const res = await fetch('/api/game-state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newGameState),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        setGameState(saved);
+      }
+    } catch (error) {
+      console.error('Failed to save Cumback Kid:', error);
+      // Fallback: save locally
+      const { saveGameState } = await import('@/lib/storage');
+      saveGameState(newGameState);
+    }
   };
 
   const handleReset = async () => {
@@ -376,7 +387,7 @@ export default function Home() {
             {/* Jesse */}
             <div className="flex flex-col gap-3">
               <PlayerCard player={gameState.jesse} isWinning={jesseWinning} />
-              {/* Pre-match Power-ups ONDER de card */}
+              {/* Pre-match Power-ups ONDER de card - Jesse zet in */}
               <div className="flex items-center justify-center gap-3">
                 <CumbackKidButton
                   playerName="Jesse"
@@ -387,10 +398,10 @@ export default function Home() {
                   onUse={() => handleCumbackKid('jesse')}
                 />
                 <PullThePlugButton
-                  playerName="Flip"
-                  targetName="Jesse"
-                  available={gameState.flip.powerUpQuota.pullThePlug > 0}
-                  onUse={() => handlePullThePlug('jesse')}
+                  playerName="Jesse"
+                  targetName="Flip"
+                  available={gameState.jesse.powerUpQuota.pullThePlug > 0}
+                  onUse={() => handlePullThePlug('flip')}
                 />
               </div>
             </div>
@@ -398,7 +409,7 @@ export default function Home() {
             {/* Flip */}
             <div className="flex flex-col gap-3">
               <PlayerCard player={gameState.flip} isWinning={flipWinning} />
-              {/* Pre-match Power-ups ONDER de card */}
+              {/* Pre-match Power-ups ONDER de card - Flip zet in */}
               <div className="flex items-center justify-center gap-3">
                 <CumbackKidButton
                   playerName="Flip"
@@ -409,10 +420,10 @@ export default function Home() {
                   onUse={() => handleCumbackKid('flip')}
                 />
                 <PullThePlugButton
-                  playerName="Jesse"
-                  targetName="Flip"
-                  available={gameState.jesse.powerUpQuota.pullThePlug > 0}
-                  onUse={() => handlePullThePlug('flip')}
+                  playerName="Flip"
+                  targetName="Jesse"
+                  available={gameState.flip.powerUpQuota.pullThePlug > 0}
+                  onUse={() => handlePullThePlug('jesse')}
                 />
               </div>
             </div>
