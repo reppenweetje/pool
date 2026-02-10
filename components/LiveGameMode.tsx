@@ -42,6 +42,9 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
           } else {
             setShowToepModal(false);
           }
+        } else {
+          // Geen active game meer (bijv. na finish)
+          setLiveGame(null);
         }
       } catch (error) {
         console.error('Failed to fetch live game:', error);
@@ -57,6 +60,7 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
   const startLiveGame = async () => {
     setLoading(true);
     try {
+      // ALTIJD een nieuwe game maken (oude wordt gecancelled in createLiveGame)
       const res = await fetch('/api/live-game', { method: 'POST' });
       
       if (!res.ok) {
@@ -66,6 +70,10 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
       
       const newGame = await res.json();
       setLiveGame(newGame);
+      
+      // Reset power-ups state voor nieuwe game
+      setJessePowerUps({});
+      setFlipPowerUps({});
     } catch (error) {
       console.error('Failed to start live game:', error);
       alert('Live mode vereist database setup. Gebruik eerst de reguliere match mode (+) of setup de database.');

@@ -129,12 +129,13 @@ export default function Home() {
       const liveRes = await fetch('/api/live-game');
       const liveGame = await liveRes.json();
 
-      const toepStake = liveGame?.currentToepStake || 1;
+      // BELANGRIJK: currentToepStake kan 0 zijn! Gebruik ?? in plaats van ||
+      const toepStake = liveGame?.currentToepStake ?? 1;
       const loser: PlayerName = winner === 'Jesse' ? 'Flip' : 'Jesse';
       const opponentBalls = winner === 'Jesse' ? flipBalls : jesseBalls;
 
       // Use the toepStake directly (already handled in LiveGameMode)
-      const actualStake = toepStake;
+      const actualStake = toepStake + 1; // +1 omdat stake 0 = 1 streak, stake 1 = 2 streaks etc.
 
       // Save match via API met toep multiplier en power-ups
       const res = await fetch('/api/matches', {
