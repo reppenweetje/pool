@@ -31,12 +31,14 @@ export default function Home() {
 
   const handleNewMatch = (data: {
     winner: PlayerName;
+    winCondition: 'normal' | 'blackBall';
     opponentBallsRemaining: number;
     powerUpsUsed: {
-      winner?: PowerUpUsage;
-      loser?: PowerUpUsage;
+      jesse?: PowerUpUsage;
+      flip?: PowerUpUsage;
     };
-    winnerOwnBalls: number;
+    jesseOwnBalls: number;
+    flipOwnBalls: number;
   }) => {
     if (!gameState) return;
 
@@ -44,9 +46,11 @@ export default function Home() {
       const result = calculateMatch({
         gameState,
         winner: data.winner,
+        winCondition: data.winCondition,
         opponentBallsRemaining: data.opponentBallsRemaining,
         powerUpsUsed: data.powerUpsUsed,
-        winnerOwnBalls: data.winnerOwnBalls,
+        jesseOwnBalls: data.jesseOwnBalls,
+        flipOwnBalls: data.flipOwnBalls,
       });
 
       setGameState(result.newGameState);

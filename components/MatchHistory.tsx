@@ -28,10 +28,9 @@ export default function MatchHistory({ matches, onRemoveMatch }: MatchHistoryPro
     <div className="space-y-3">
       {sortedMatches.map((match, index) => {
         const totalAmount = match.amountWon + (match.ballenBakBonus || 0);
-        const powerUpsUsed = [
-          ...(match.powerUpsUsed.winner ? Object.keys(match.powerUpsUsed.winner) : []),
-          ...(match.powerUpsUsed.loser ? Object.keys(match.powerUpsUsed.loser) : []),
-        ];
+        const jessePowerUps = match.powerUpsUsed.jesse || {};
+        const flipPowerUps = match.powerUpsUsed.flip || {};
+        const hasPowerUps = Object.keys(jessePowerUps).length > 0 || Object.keys(flipPowerUps).length > 0;
 
         return (
           <motion.div
@@ -70,14 +69,14 @@ export default function MatchHistory({ matches, onRemoveMatch }: MatchHistoryPro
             </div>
 
             {/* Details */}
-            <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-3">
               <div>
                 {match.loser}: {match.opponentBallsRemaining} ballen over
               </div>
-              {match.bbcBonus && (
-                <div className="flex items-center gap-1 text-yellow-400">
+              {match.winCondition === 'blackBall' && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-yellow-900/40 text-yellow-300 rounded-lg font-semibold">
                   <Gift className="w-4 h-4" />
-                  <span>BBC +€5</span>
+                  <span>BB +€5</span>
                 </div>
               )}
               {match.ballenBakBonus && (
@@ -89,42 +88,103 @@ export default function MatchHistory({ matches, onRemoveMatch }: MatchHistoryPro
             </div>
 
             {/* Power-ups gebruikt */}
-            {powerUpsUsed.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-3">
-                {match.powerUpsUsed.winner?.ballenBakBizarre && (
-                  <span className="px-2 py-1 text-xs font-semibold bg-purple-600/30 text-purple-300 rounded-lg">
-                    BBB
-                  </span>
+            {hasPowerUps && (
+              <div className="space-y-2 mb-3">
+                {/* Jesse's power-ups */}
+                {Object.keys(jessePowerUps).length > 0 && (
+                  <div>
+                    <span className="text-xs text-blue-400 font-semibold mr-2">Jesse:</span>
+                    <div className="inline-flex flex-wrap gap-1.5">
+                      {jessePowerUps.toep && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-blue-600/30 text-blue-300 rounded">
+                          Toep
+                        </span>
+                      )}
+                      {jessePowerUps.ballenBakBizarre && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-purple-600/30 text-purple-300 rounded">
+                          BBB
+                        </span>
+                      )}
+                      {jessePowerUps.cumbackKid && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-green-600/30 text-green-300 rounded">
+                          Cumback
+                        </span>
+                      )}
+                      {jessePowerUps.ballenBak && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-red-600/30 text-red-300 rounded">
+                          Ballenbak
+                        </span>
+                      )}
+                      {jessePowerUps.pullThePlug && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-red-800/30 text-red-300 rounded">
+                          Pull Plug
+                        </span>
+                      )}
+                      {jessePowerUps.sniper && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-yellow-600/30 text-yellow-300 rounded">
+                          Sniper {jessePowerUps.sniper.successful ? '✓' : '✗'} ({jessePowerUps.sniper.ballsPotted})
+                        </span>
+                      )}
+                      {jessePowerUps.doubleTrouble && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-pink-600/30 text-pink-300 rounded">
+                          Double {jessePowerUps.doubleTrouble.successful ? '✓' : '✗'}
+                        </span>
+                      )}
+                      {jessePowerUps.speedpot && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-orange-600/30 text-orange-300 rounded">
+                          Speedpot
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 )}
-                {match.powerUpsUsed.loser?.cumbackKid && (
-                  <span className="px-2 py-1 text-xs font-semibold bg-green-600/30 text-green-300 rounded-lg">
-                    Cumback Kid
-                  </span>
-                )}
-                {match.powerUpsUsed.winner?.toep && (
-                  <span className="px-2 py-1 text-xs font-semibold bg-blue-600/30 text-blue-300 rounded-lg">
-                    Toep
-                  </span>
-                )}
-                {match.powerUpsUsed.winner?.ballenBak && (
-                  <span className="px-2 py-1 text-xs font-semibold bg-red-600/30 text-red-300 rounded-lg">
-                    Ballenbak
-                  </span>
-                )}
-                {match.powerUpsUsed.winner?.pullThePlug && (
-                  <span className="px-2 py-1 text-xs font-semibold bg-red-800/30 text-red-300 rounded-lg">
-                    Pull The Plug
-                  </span>
-                )}
-                {match.powerUpsUsed.winner?.sniper && (
-                  <span className="px-2 py-1 text-xs font-semibold bg-yellow-600/30 text-yellow-300 rounded-lg">
-                    Sniper ({match.powerUpsUsed.winner.sniper.ballsPotted})
-                  </span>
-                )}
-                {match.powerUpsUsed.winner?.speedpot && (
-                  <span className="px-2 py-1 text-xs font-semibold bg-orange-600/30 text-orange-300 rounded-lg">
-                    Speedpot
-                  </span>
+                {/* Flip's power-ups */}
+                {Object.keys(flipPowerUps).length > 0 && (
+                  <div>
+                    <span className="text-xs text-orange-400 font-semibold mr-2">Flip:</span>
+                    <div className="inline-flex flex-wrap gap-1.5">
+                      {flipPowerUps.toep && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-blue-600/30 text-blue-300 rounded">
+                          Toep
+                        </span>
+                      )}
+                      {flipPowerUps.ballenBakBizarre && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-purple-600/30 text-purple-300 rounded">
+                          BBB
+                        </span>
+                      )}
+                      {flipPowerUps.cumbackKid && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-green-600/30 text-green-300 rounded">
+                          Cumback
+                        </span>
+                      )}
+                      {flipPowerUps.ballenBak && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-red-600/30 text-red-300 rounded">
+                          Ballenbak
+                        </span>
+                      )}
+                      {flipPowerUps.pullThePlug && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-red-800/30 text-red-300 rounded">
+                          Pull Plug
+                        </span>
+                      )}
+                      {flipPowerUps.sniper && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-yellow-600/30 text-yellow-300 rounded">
+                          Sniper {flipPowerUps.sniper.successful ? '✓' : '✗'} ({flipPowerUps.sniper.ballsPotted})
+                        </span>
+                      )}
+                      {flipPowerUps.doubleTrouble && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-pink-600/30 text-pink-300 rounded">
+                          Double {flipPowerUps.doubleTrouble.successful ? '✓' : '✗'}
+                        </span>
+                      )}
+                      {flipPowerUps.speedpot && (
+                        <span className="px-2 py-0.5 text-xs font-semibold bg-orange-600/30 text-orange-300 rounded">
+                          Speedpot
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             )}

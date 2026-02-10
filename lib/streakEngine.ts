@@ -8,11 +8,14 @@ import {
   MatchResult,
   PowerUpUsage,
   GameState,
+  WinCondition,
   calculateStreakAmount,
   isCapActive,
   calculateCappedAmount,
+  calculateSniperBonus,
   BALLENBAK_PENALTY_PER_BALL,
-  BBC_BONUS,
+  BLACK_BALL_BONUS,
+  DOUBLE_TROUBLE_MULTIPLIER,
   INITIAL_POWER_UP_QUOTA,
   getCurrentMonth,
   hasMonthChanged,
@@ -21,12 +24,14 @@ import {
 interface CalculateMatchParams {
   gameState: GameState;
   winner: PlayerName;
+  winCondition: WinCondition;
   opponentBallsRemaining: number;
   powerUpsUsed: {
-    winner?: PowerUpUsage;
-    loser?: PowerUpUsage;
+    jesse?: PowerUpUsage;
+    flip?: PowerUpUsage;
   };
-  winnerOwnBalls?: number;  // Eigen ballen winnaar (voor Toep/Ballenbak Bizarre check)
+  jesseOwnBalls?: number;
+  flipOwnBalls?: number;
 }
 
 interface CalculateMatchResult {
@@ -39,123 +44,145 @@ interface CalculateMatchResult {
  * Dit is de kern van het spel - alle regels komen hier samen
  */
 export function calculateMatch(params: CalculateMatchParams): CalculateMatchResult {
-  const { gameState, winner, opponentBallsRemaining, powerUpsUsed, winnerOwnBalls = 0 } = params;
+  const { gameState, winner, winCondition, opponentBallsRemaining, powerUpsUsed, jesseOwnBalls = 0, flipOwnBalls = 0 } = params;
   
   const loser: PlayerName = winner === 'Jesse' ? 'Flip' : 'Jesse';
-  const winnerPlayer = { ...gameState[winner.toLowerCase() as 'jesse' | 'flip'] };
-  const loserPlayer = { ...gameState[loser.toLowerCase() as 'jesse' | 'flip'] };
+  const jessePlayer = { ...gameState.jesse };
+  const flipPlayer = { ...gameState.flip };
   
   // Check of we in een nieuwe maand zijn (reset power-ups)
   const currentMonth = getCurrentMonth();
   if (hasMonthChanged(gameState.currentMonth, currentMonth)) {
-    winnerPlayer.powerUpQuota = { ...INITIAL_POWER_UP_QUOTA };
-    loserPlayer.powerUpQuota = { ...INITIAL_POWER_UP_QUOTA };
+    jessePlayer.powerUpQuota = { ...INITIAL_POWER_UP_QUOTA };
+    flipPlayer.powerUpQuota = { ...INITIAL_POWER_UP_QUOTA };
   }
+
+  const jessePowerUps = powerUpsUsed.jesse || {};
+  const flipPowerUps = powerUpsUsed.flip || {};
+  const winnerPowerUps = winner === 'Jesse' ? jessePowerUps : flipPowerUps;
+  const loserPowerUps = winner === 'Jesse' ? flipPowerUps : jessePowerUps;
 
   // Bewaar de oude streaks
   const streakBefore = {
-    winner: winnerPlayer.streak,
-    loser: loserPlayer.streak,
+    winner: winner === 'Jesse' ? jessePlayer.streak : flipPlayer.streak,
+    loser: winner === 'Jesse' ? flipPlayer.streak : jessePlayer.streak,
   };
 
   // ============================================================================
-  // FASE 1: POWER-UPS VAN DE VERLIEZER (voor streak berekening)
+  // FASE 1: PRE-MATCH POWER-UPS (beide spelers)
   // ============================================================================
   
-  let loserUsedCumbackKid = false;
+  // TOEP voor Jesse
+  if (jessePowerUps.toep) {
+    jessePlayer.streak += 1;
+    jessePlayer.powerUpQuota.toep--;
+  }
   
-  if (powerUpsUsed.loser?.cumbackKid) {
-    // Cumback Kid: Verliezer neemt (winnaar streak - 1)
-    loserPlayer.streak = Math.max(0, winnerPlayer.streak - 1);
-    loserPlayer.powerUpQuota.cumbackKid--;
+  // TOEP voor Flip
+  if (flipPowerUps.toep) {
+    flipPlayer.streak += 1;
+    flipPlayer.powerUpQuota.toep--;
+  }
+
+  // PULL THE PLUG
+  if (jessePowerUps.pullThePlug) {
+    flipPlayer.streak = 0;
+    jessePlayer.powerUpQuota.pullThePlug--;
+  }
+  if (flipPowerUps.pullThePlug) {
+    jessePlayer.streak = 0;
+    flipPlayer.powerUpQuota.pullThePlug--;
+  }
+
+  // CUMBACK KID - verliezer kan dit gebruiken
+  let loserUsedCumbackKid = false;
+  if (loserPowerUps.cumbackKid) {
+    const winnerCurrentStreak = winner === 'Jesse' ? jessePlayer.streak : flipPlayer.streak;
+    const newLoserStreak = Math.max(0, winnerCurrentStreak - 1);
+    
+    if (loser === 'Jesse') {
+      jessePlayer.streak = newLoserStreak;
+      jessePlayer.powerUpQuota.cumbackKid--;
+    } else {
+      flipPlayer.streak = newLoserStreak;
+      flipPlayer.powerUpQuota.cumbackKid--;
+    }
     loserUsedCumbackKid = true;
   }
 
   // ============================================================================
-  // FASE 2: PRE-MATCH POWER-UPS VAN DE WINNAAR
+  // FASE 2: BASIS STREAK BEREKENING
   // ============================================================================
   
-  let sniperBonus = 0;
-  let pullThePlugUsed = false;
-
-  // TOEP: Winnaar verhoogt zijn eigen streak met +1
-  if (powerUpsUsed.winner?.toep) {
-    if (winnerOwnBalls >= 2) {
-      winnerPlayer.streak += 1;
-      winnerPlayer.powerUpQuota.toep--;
-    } else {
-      throw new Error('Toep kan alleen gebruikt worden met minimaal 2 eigen ballen op tafel');
-    }
-  }
-
-  // PULL THE PLUG: Reset tegenstander streak naar 0
-  if (powerUpsUsed.winner?.pullThePlug) {
-    loserPlayer.streak = 0;
-    winnerPlayer.powerUpQuota.pullThePlug--;
-    pullThePlugUsed = true;
-  }
-
-  // SNIPER: Bonus voor series
-  if (powerUpsUsed.winner?.sniper) {
-    const ballsPotted = powerUpsUsed.winner.sniper.ballsPotted;
-    if (ballsPotted === 3) {
-      sniperBonus = 1; // +1 level
-    } else if (ballsPotted === 4) {
-      sniperBonus = winnerPlayer.streak; // x2 (huidige streak nog een keer erbij)
-    }
-    winnerPlayer.powerUpQuota.sniper--;
-  }
-
-  // ============================================================================
-  // FASE 3: BASIS STREAK BEREKENING
-  // ============================================================================
-  
-  let newWinnerStreak = winnerPlayer.streak;
-  let newLoserStreak = loserPlayer.streak;
+  let newWinnerStreak = winner === 'Jesse' ? jessePlayer.streak : flipPlayer.streak;
+  let newLoserStreak = winner === 'Jesse' ? flipPlayer.streak : jessePlayer.streak;
 
   if (loserUsedCumbackKid) {
     // Als verliezer Cumback Kid gebruikte EN winnaar wint toch:
     // Winnaar krijgt +2 (Streaker bonus)
-    newWinnerStreak = winnerPlayer.streak + 2;
-    // Verliezer heeft al zijn nieuwe streak gekregen in fase 1
+    newWinnerStreak = newWinnerStreak + 2;
+    // Verliezer behoudt zijn cumback streak
   } else {
     // Normale streak progression
-    newWinnerStreak = winnerPlayer.streak + 1;
+    newWinnerStreak = newWinnerStreak + 1;
     newLoserStreak = 0; // Verliezer reset naar 0
   }
 
   // ============================================================================
-  // FASE 4: BALLENBAK BIZARRE
+  // FASE 3: POST-MATCH STREAK BONUSSEN
   // ============================================================================
   
-  if (powerUpsUsed.winner?.ballenBakBizarre) {
-    if (winnerOwnBalls >= 3) {
-      // Winnaar krijgt bonus streak gelijk aan tegenstander ballen
-      newWinnerStreak += opponentBallsRemaining;
-      winnerPlayer.powerUpQuota.ballenBakBizarre--;
+  // BALLENBAK BIZARRE
+  if (winnerPowerUps.ballenBakBizarre) {
+    newWinnerStreak += opponentBallsRemaining;
+    if (winner === 'Jesse') {
+      jessePlayer.powerUpQuota.ballenBakBizarre--;
     } else {
-      throw new Error('Ballenbak Bizarre kan alleen gebruikt worden met minimaal 3 eigen ballen');
+      flipPlayer.powerUpQuota.ballenBakBizarre--;
     }
   }
 
-  // ============================================================================
-  // FASE 5: SNIPER BONUS TOEPASSEN
-  // ============================================================================
-  
-  newWinnerStreak += sniperBonus;
+  // SNIPER - met succescheck en reeks lengte
+  if (winnerPowerUps.sniper?.successful) {
+    const sniperBonus = calculateSniperBonus(winnerPowerUps.sniper.ballsPotted, newWinnerStreak);
+    newWinnerStreak += sniperBonus;
+    if (winner === 'Jesse') {
+      jessePlayer.powerUpQuota.sniper--;
+    } else {
+      flipPlayer.powerUpQuota.sniper--;
+    }
+  }
+
+  // Update de streaks
+  if (winner === 'Jesse') {
+    jessePlayer.streak = newWinnerStreak;
+    flipPlayer.streak = newLoserStreak;
+  } else {
+    flipPlayer.streak = newWinnerStreak;
+    jessePlayer.streak = newLoserStreak;
+  }
 
   // ============================================================================
-  // FASE 6: BEDRAG BEREKENING
+  // FASE 4: BEDRAG BEREKENING
   // ============================================================================
   
   let amountWon = calculateStreakAmount(newWinnerStreak);
   let cappedAmount = false;
 
+  // DOUBLE TROUBLE - verdubbel de inzet als succesvol
+  let doubleTroubleActive = false;
+  if (winnerPowerUps.doubleTrouble?.successful) {
+    amountWon *= DOUBLE_TROUBLE_MULTIPLIER;
+    doubleTroubleActive = true;
+    if (winner === 'Jesse') {
+      jessePlayer.powerUpQuota.doubleTrouble--;
+    } else {
+      flipPlayer.powerUpQuota.doubleTrouble--;
+    }
+  }
+
   // Check anti-faillissement limiet
-  if (isCapActive(
-    winner === 'Jesse' ? winnerPlayer.monthlyTotal : loserPlayer.monthlyTotal,
-    winner === 'Jesse' ? loserPlayer.monthlyTotal : winnerPlayer.monthlyTotal
-  )) {
+  if (isCapActive(jessePlayer.monthlyTotal, flipPlayer.monthlyTotal)) {
     // Tel aantal consecutieve wins (voor capped increment)
     const recentWins = gameState.matches
       .filter(m => m.month === currentMonth && m.winner === winner)
@@ -170,48 +197,51 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
   }
 
   // ============================================================================
-  // FASE 7: BALLENBAK BONUS (Extra penalty)
+  // FASE 5: EXTRA BONUSSEN
   // ============================================================================
   
+  // BALLENBAK BONUS (Extra penalty)
   let ballenBakBonus = 0;
-  if (powerUpsUsed.winner?.ballenBak) {
+  if (winnerPowerUps.ballenBak) {
     ballenBakBonus = opponentBallsRemaining * BALLENBAK_PENALTY_PER_BALL;
-    winnerPlayer.powerUpQuota.ballenBak--;
+    if (winner === 'Jesse') {
+      jessePlayer.powerUpQuota.ballenBak--;
+    } else {
+      flipPlayer.powerUpQuota.ballenBak--;
+    }
+  }
+
+  // BLACK BALL BONUS (winnaar wint doordat verliezer zwarte bal te vroeg potte)
+  let blackBallBonus = false;
+  if (winCondition === 'blackBall') {
+    amountWon += BLACK_BALL_BONUS;
+    blackBallBonus = true;
   }
 
   // ============================================================================
-  // FASE 8: BBC BONUS
+  // FASE 6: SPEEDPOT (alleen tracking, geen effect op bedrag)
   // ============================================================================
   
-  let bbcBonus = false;
-  if (powerUpsUsed.winner?.bbc) {
-    amountWon += BBC_BONUS;
-    bbcBonus = true;
-    // BBC is onbeperkt, geen quota aftrek
+  if (jessePowerUps.speedpot) {
+    jessePlayer.powerUpQuota.speedpot--;
+  }
+  if (flipPowerUps.speedpot) {
+    flipPlayer.powerUpQuota.speedpot--;
   }
 
   // ============================================================================
-  // FASE 9: SPEEDPOT (alleen tracking)
-  // ============================================================================
-  
-  if (powerUpsUsed.winner?.speedpot) {
-    winnerPlayer.powerUpQuota.speedpot--;
-    // Speedpot heeft geen effect op bedragen, alleen op gameplay
-  }
-
-  // ============================================================================
-  // FASE 10: TOTALEN UPDATEN
+  // FASE 7: TOTALEN UPDATEN
   // ============================================================================
   
   const totalWon = amountWon + ballenBakBonus;
-  winnerPlayer.monthlyTotal += totalWon;
-
-  // Update streaks
-  winnerPlayer.streak = newWinnerStreak;
-  loserPlayer.streak = newLoserStreak;
+  if (winner === 'Jesse') {
+    jessePlayer.monthlyTotal += totalWon;
+  } else {
+    flipPlayer.monthlyTotal += totalWon;
+  }
 
   // ============================================================================
-  // FASE 11: MATCH RESULT OBJECT CREËREN
+  // FASE 8: MATCH RESULT OBJECT CREËREN
   // ============================================================================
   
   const matchResult: MatchResult = {
@@ -220,8 +250,12 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
     month: currentMonth,
     winner,
     loser,
+    winCondition,
     opponentBallsRemaining,
-    powerUpsUsed,
+    powerUpsUsed: {
+      jesse: Object.keys(jessePowerUps).length > 0 ? jessePowerUps : undefined,
+      flip: Object.keys(flipPowerUps).length > 0 ? flipPowerUps : undefined,
+    },
     streakBefore,
     streakAfter: {
       winner: newWinnerStreak,
@@ -229,18 +263,18 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
     },
     amountWon,
     ballenBakBonus: ballenBakBonus > 0 ? ballenBakBonus : undefined,
-    bbcBonus,
+    blackBallBonus,
     cappedAmount,
   };
 
   // ============================================================================
-  // FASE 12: NIEUWE GAME STATE SAMENSTELLEN
+  // FASE 9: NIEUWE GAME STATE SAMENSTELLEN
   // ============================================================================
   
   const newGameState: GameState = {
     ...gameState,
-    [winner.toLowerCase()]: winnerPlayer,
-    [loser.toLowerCase()]: loserPlayer,
+    jesse: jessePlayer,
+    flip: flipPlayer,
     currentMonth,
     matches: [...gameState.matches, matchResult],
     lastMatchId: matchResult.id,
@@ -315,6 +349,7 @@ export function removeMatch(gameState: GameState, matchId: string): GameState {
     const result = calculateMatch({
       gameState: newState,
       winner: match.winner,
+      winCondition: match.winCondition,
       opponentBallsRemaining: match.opponentBallsRemaining,
       powerUpsUsed: match.powerUpsUsed,
     });

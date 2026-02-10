@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { PlayerName, PowerUpUsage, GameState } from '@/types';
-import { X, Check } from 'lucide-react';
+import { PlayerName, PowerUpUsage, GameState, WinCondition } from '@/types';
+import { X, Check, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface MatchInputModalProps {
@@ -10,57 +10,68 @@ interface MatchInputModalProps {
   onClose: () => void;
   onSubmit: (data: {
     winner: PlayerName;
+    winCondition: WinCondition;
     opponentBallsRemaining: number;
     powerUpsUsed: {
-      winner?: PowerUpUsage;
-      loser?: PowerUpUsage;
+      jesse?: PowerUpUsage;
+      flip?: PowerUpUsage;
     };
-    winnerOwnBalls: number;
+    jesseOwnBalls: number;
+    flipOwnBalls: number;
   }) => void;
   gameState: GameState;
 }
 
 export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }: MatchInputModalProps) {
   const [winner, setWinner] = useState<PlayerName | null>(null);
+  const [winCondition, setWinCondition] = useState<WinCondition>('normal');
   const [opponentBalls, setOpponentBalls] = useState(7);
-  const [winnerOwnBalls, setWinnerOwnBalls] = useState(0);
-  const [winnerPowerUps, setWinnerPowerUps] = useState<PowerUpUsage>({});
-  const [loserPowerUps, setLoserPowerUps] = useState<PowerUpUsage>({});
+  const [jesseOwnBalls, setJesseOwnBalls] = useState(0);
+  const [flipOwnBalls, setFlipOwnBalls] = useState(0);
+  const [jessePowerUps, setJessePowerUps] = useState<PowerUpUsage>({});
+  const [flipPowerUps, setFlipPowerUps] = useState<PowerUpUsage>({});
 
   const loser: PlayerName | null = winner === 'Jesse' ? 'Flip' : winner === 'Flip' ? 'Jesse' : null;
-  const winnerPlayer = winner ? gameState[winner.toLowerCase() as 'jesse' | 'flip'] : null;
-  const loserPlayer = loser ? gameState[loser.toLowerCase() as 'jesse' | 'flip'] : null;
 
   const handleSubmit = () => {
     if (!winner) return;
 
     onSubmit({
       winner,
+      winCondition,
       opponentBallsRemaining: opponentBalls,
       powerUpsUsed: {
-        winner: Object.keys(winnerPowerUps).length > 0 ? winnerPowerUps : undefined,
-        loser: Object.keys(loserPowerUps).length > 0 ? loserPowerUps : undefined,
+        jesse: Object.keys(jessePowerUps).length > 0 ? jessePowerUps : undefined,
+        flip: Object.keys(flipPowerUps).length > 0 ? flipPowerUps : undefined,
       },
-      winnerOwnBalls,
+      jesseOwnBalls,
+      flipOwnBalls,
     });
 
     // Reset form
     setWinner(null);
+    setWinCondition('normal');
     setOpponentBalls(7);
-    setWinnerOwnBalls(0);
-    setWinnerPowerUps({});
-    setLoserPowerUps({});
+    setJesseOwnBalls(0);
+    setFlipOwnBalls(0);
+    setJessePowerUps({});
+    setFlipPowerUps({});
   };
 
-  const toggleWinnerPowerUp = (powerUp: keyof PowerUpUsage) => {
-    setWinnerPowerUps(prev => {
+  const toggleJessePowerUp = (powerUp: keyof PowerUpUsage, data?: any) => {
+    setJessePowerUps(prev => {
       const newPowerUps = { ...prev };
       if (powerUp === 'sniper') {
-        // Toggle sniper met 3 ballen als default
         if (newPowerUps.sniper) {
           delete newPowerUps.sniper;
         } else {
-          newPowerUps.sniper = { ballsPotted: 3 };
+          newPowerUps.sniper = data || { ballsPotted: 3, successful: true };
+        }
+      } else if (powerUp === 'doubleTrouble') {
+        if (newPowerUps.doubleTrouble) {
+          delete newPowerUps.doubleTrouble;
+        } else {
+          newPowerUps.doubleTrouble = data || { ballsPotted: 3, successful: true };
         }
       } else if (powerUp in newPowerUps) {
         delete newPowerUps[powerUp];
@@ -71,10 +82,22 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
     });
   };
 
-  const toggleLoserPowerUp = (powerUp: keyof PowerUpUsage) => {
-    setLoserPowerUps(prev => {
+  const toggleFlipPowerUp = (powerUp: keyof PowerUpUsage, data?: any) => {
+    setFlipPowerUps(prev => {
       const newPowerUps = { ...prev };
-      if (powerUp in newPowerUps) {
+      if (powerUp === 'sniper') {
+        if (newPowerUps.sniper) {
+          delete newPowerUps.sniper;
+        } else {
+          newPowerUps.sniper = data || { ballsPotted: 3, successful: true };
+        }
+      } else if (powerUp === 'doubleTrouble') {
+        if (newPowerUps.doubleTrouble) {
+          delete newPowerUps.doubleTrouble;
+        } else {
+          newPowerUps.doubleTrouble = data || { ballsPotted: 3, successful: true };
+        }
+      } else if (powerUp in newPowerUps) {
         delete newPowerUps[powerUp];
       } else {
         (newPowerUps as any)[powerUp] = true;
@@ -99,7 +122,7 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -145,6 +168,43 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
 
           {winner && (
             <>
+              {/* Win Condition */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
+                  Hoe gewonnen?
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setWinCondition('normal')}
+                    className={`p-4 rounded-xl font-bold transition-all ${
+                      winCondition === 'normal'
+                        ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    Normaal
+                  </button>
+                  <button
+                    onClick={() => setWinCondition('blackBall')}
+                    className={`p-4 rounded-xl font-bold transition-all ${
+                      winCondition === 'blackBall'
+                        ? 'bg-black text-yellow-400 ring-2 ring-yellow-400'
+                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    }`}
+                  >
+                    BB - Zwarte Bal +€5
+                  </button>
+                </div>
+                {winCondition === 'blackBall' && (
+                  <div className="mt-2 p-3 bg-yellow-900/30 border border-yellow-600 rounded-lg flex items-start gap-2">
+                    <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-yellow-200">
+                      {loser} potte de zwarte bal te vroeg of in het verkeerde gat. {winner} krijgt +€5 bonus!
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* Ballen verliezer */}
               <div className="mb-6">
                 <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
@@ -165,137 +225,255 @@ export default function MatchInputModal({ isOpen, onClose, onSubmit, gameState }
                 </div>
               </div>
 
-              {/* Eigen ballen winnaar */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
-                  Hoeveel ballen had {winner} nog over?
-                </label>
-                <div className="flex items-center gap-4">
-                  <input
-                    type="range"
-                    min="0"
-                    max="7"
-                    value={winnerOwnBalls}
-                    onChange={(e) => setWinnerOwnBalls(Number(e.target.value))}
-                    className="flex-1 h-3 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                  />
-                  <div className="text-3xl font-bold text-white w-16 text-center">
-                    {winnerOwnBalls}
+              {/* Eigen ballen beide spelers */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
+                    Jesse's ballen
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="7"
+                      value={jesseOwnBalls}
+                      onChange={(e) => setJesseOwnBalls(Number(e.target.value))}
+                      className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                    />
+                    <div className="text-2xl font-bold text-white w-12 text-center">
+                      {jesseOwnBalls}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
+                    Flip's ballen
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max="7"
+                      value={flipOwnBalls}
+                      onChange={(e) => setFlipOwnBalls(Number(e.target.value))}
+                      className="flex-1 h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                    />
+                    <div className="text-2xl font-bold text-white w-12 text-center">
+                      {flipOwnBalls}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Power-ups winnaar */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
-                  Power-ups {winner}
+              {/* Power-ups Jesse */}
+              <div className="mb-6 p-4 bg-blue-900/20 rounded-2xl">
+                <label className="block text-sm font-semibold text-blue-300 mb-3 uppercase tracking-wide">
+                  Power-ups Jesse
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  {winnerPlayer && winnerPlayer.powerUpQuota.ballenBakBizarre > 0 && (
+                  {gameState.jesse.powerUpQuota.toep > 0 && (
                     <button
-                      onClick={() => toggleWinnerPowerUp('ballenBakBizarre')}
-                      disabled={winnerOwnBalls < 3}
-                      className={`p-4 rounded-xl font-bold transition-all ${
-                        winnerPowerUps.ballenBakBizarre
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      } ${winnerOwnBalls < 3 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      Ballenbak Bizarre ({winnerPlayer.powerUpQuota.ballenBakBizarre})
-                    </button>
-                  )}
-                  {winnerPlayer && winnerPlayer.powerUpQuota.toep > 0 && (
-                    <button
-                      onClick={() => toggleWinnerPowerUp('toep')}
-                      disabled={winnerOwnBalls < 2}
-                      className={`p-4 rounded-xl font-bold transition-all ${
-                        winnerPowerUps.toep
+                      onClick={() => toggleJessePowerUp('toep')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        jessePowerUps.toep
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      } ${winnerOwnBalls < 2 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      }`}
                     >
-                      Toep ({winnerPlayer.powerUpQuota.toep})
+                      Toep ({gameState.jesse.powerUpQuota.toep})
                     </button>
                   )}
-                  {winnerPlayer && winnerPlayer.powerUpQuota.ballenBak > 0 && (
+                  {gameState.jesse.powerUpQuota.ballenBakBizarre > 0 && (
                     <button
-                      onClick={() => toggleWinnerPowerUp('ballenBak')}
-                      className={`p-4 rounded-xl font-bold transition-all ${
-                        winnerPowerUps.ballenBak
+                      onClick={() => toggleJessePowerUp('ballenBakBizarre')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        jessePowerUps.ballenBakBizarre
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      BBB ({gameState.jesse.powerUpQuota.ballenBakBizarre})
+                    </button>
+                  )}
+                  {gameState.jesse.powerUpQuota.cumbackKid > 0 && (
+                    <button
+                      onClick={() => toggleJessePowerUp('cumbackKid')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        jessePowerUps.cumbackKid
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Cumback ({gameState.jesse.powerUpQuota.cumbackKid})
+                    </button>
+                  )}
+                  {gameState.jesse.powerUpQuota.ballenBak > 0 && (
+                    <button
+                      onClick={() => toggleJessePowerUp('ballenBak')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        jessePowerUps.ballenBak
                           ? 'bg-red-600 text-white'
                           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       }`}
                     >
-                      Ballenbak ({winnerPlayer.powerUpQuota.ballenBak})
+                      Ballenbak ({gameState.jesse.powerUpQuota.ballenBak})
                     </button>
                   )}
-                  {winnerPlayer && winnerPlayer.powerUpQuota.pullThePlug > 0 && (
+                  {gameState.jesse.powerUpQuota.pullThePlug > 0 && (
                     <button
-                      onClick={() => toggleWinnerPowerUp('pullThePlug')}
-                      className={`p-4 rounded-xl font-bold transition-all ${
-                        winnerPowerUps.pullThePlug
+                      onClick={() => toggleJessePowerUp('pullThePlug')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        jessePowerUps.pullThePlug
                           ? 'bg-red-800 text-white'
                           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       }`}
                     >
-                      Pull The Plug ({winnerPlayer.powerUpQuota.pullThePlug})
+                      Pull Plug ({gameState.jesse.powerUpQuota.pullThePlug})
                     </button>
                   )}
-                  {winnerPlayer && winnerPlayer.powerUpQuota.sniper > 0 && (
+                  {gameState.jesse.powerUpQuota.sniper > 0 && (
                     <button
-                      onClick={() => toggleWinnerPowerUp('sniper')}
-                      className={`p-4 rounded-xl font-bold transition-all ${
-                        winnerPowerUps.sniper
+                      onClick={() => toggleJessePowerUp('sniper', { ballsPotted: 3, successful: true })}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        jessePowerUps.sniper
                           ? 'bg-yellow-600 text-white'
                           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       }`}
                     >
-                      Sniper ({winnerPlayer.powerUpQuota.sniper})
+                      Sniper ({gameState.jesse.powerUpQuota.sniper})
                     </button>
                   )}
-                  {winnerPlayer && winnerPlayer.powerUpQuota.speedpot > 0 && (
+                  {gameState.jesse.powerUpQuota.doubleTrouble > 0 && (
                     <button
-                      onClick={() => toggleWinnerPowerUp('speedpot')}
-                      className={`p-4 rounded-xl font-bold transition-all ${
-                        winnerPowerUps.speedpot
+                      onClick={() => toggleJessePowerUp('doubleTrouble', { ballsPotted: 3, successful: true })}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        jessePowerUps.doubleTrouble
+                          ? 'bg-pink-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Double ({gameState.jesse.powerUpQuota.doubleTrouble})
+                    </button>
+                  )}
+                  {gameState.jesse.powerUpQuota.speedpot > 0 && (
+                    <button
+                      onClick={() => toggleJessePowerUp('speedpot')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        jessePowerUps.speedpot
                           ? 'bg-orange-600 text-white'
                           : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                       }`}
                     >
-                      Speedpot ({winnerPlayer.powerUpQuota.speedpot})
+                      Speedpot ({gameState.jesse.powerUpQuota.speedpot})
                     </button>
                   )}
-                  <button
-                    onClick={() => toggleWinnerPowerUp('bbc')}
-                    className={`p-4 rounded-xl font-bold transition-all ${
-                      winnerPowerUps.bbc
-                        ? 'bg-black text-yellow-400 ring-2 ring-yellow-400'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    BBC +€5 (∞)
-                  </button>
                 </div>
               </div>
 
-              {/* Power-ups verliezer */}
-              {loserPlayer && loserPlayer.powerUpQuota.cumbackKid > 0 && (
-                <div className="mb-6">
-                  <label className="block text-sm font-semibold text-gray-300 mb-3 uppercase tracking-wide">
-                    Power-ups {loser}
-                  </label>
-                  <button
-                    onClick={() => toggleLoserPowerUp('cumbackKid')}
-                    className={`w-full p-4 rounded-xl font-bold transition-all ${
-                      loserPowerUps.cumbackKid
-                        ? 'bg-green-600 text-white ring-4 ring-green-400'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    }`}
-                  >
-                    Cumback Kid ({loserPlayer.powerUpQuota.cumbackKid})
-                  </button>
+              {/* Power-ups Flip */}
+              <div className="mb-6 p-4 bg-orange-900/20 rounded-2xl">
+                <label className="block text-sm font-semibold text-orange-300 mb-3 uppercase tracking-wide">
+                  Power-ups Flip
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {gameState.flip.powerUpQuota.toep > 0 && (
+                    <button
+                      onClick={() => toggleFlipPowerUp('toep')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        flipPowerUps.toep
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Toep ({gameState.flip.powerUpQuota.toep})
+                    </button>
+                  )}
+                  {gameState.flip.powerUpQuota.ballenBakBizarre > 0 && (
+                    <button
+                      onClick={() => toggleFlipPowerUp('ballenBakBizarre')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        flipPowerUps.ballenBakBizarre
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      BBB ({gameState.flip.powerUpQuota.ballenBakBizarre})
+                    </button>
+                  )}
+                  {gameState.flip.powerUpQuota.cumbackKid > 0 && (
+                    <button
+                      onClick={() => toggleFlipPowerUp('cumbackKid')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        flipPowerUps.cumbackKid
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Cumback ({gameState.flip.powerUpQuota.cumbackKid})
+                    </button>
+                  )}
+                  {gameState.flip.powerUpQuota.ballenBak > 0 && (
+                    <button
+                      onClick={() => toggleFlipPowerUp('ballenBak')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        flipPowerUps.ballenBak
+                          ? 'bg-red-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Ballenbak ({gameState.flip.powerUpQuota.ballenBak})
+                    </button>
+                  )}
+                  {gameState.flip.powerUpQuota.pullThePlug > 0 && (
+                    <button
+                      onClick={() => toggleFlipPowerUp('pullThePlug')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        flipPowerUps.pullThePlug
+                          ? 'bg-red-800 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Pull Plug ({gameState.flip.powerUpQuota.pullThePlug})
+                    </button>
+                  )}
+                  {gameState.flip.powerUpQuota.sniper > 0 && (
+                    <button
+                      onClick={() => toggleFlipPowerUp('sniper', { ballsPotted: 3, successful: true })}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        flipPowerUps.sniper
+                          ? 'bg-yellow-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Sniper ({gameState.flip.powerUpQuota.sniper})
+                    </button>
+                  )}
+                  {gameState.flip.powerUpQuota.doubleTrouble > 0 && (
+                    <button
+                      onClick={() => toggleFlipPowerUp('doubleTrouble', { ballsPotted: 3, successful: true })}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        flipPowerUps.doubleTrouble
+                          ? 'bg-pink-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Double ({gameState.flip.powerUpQuota.doubleTrouble})
+                    </button>
+                  )}
+                  {gameState.flip.powerUpQuota.speedpot > 0 && (
+                    <button
+                      onClick={() => toggleFlipPowerUp('speedpot')}
+                      className={`p-3 rounded-xl font-bold text-sm transition-all ${
+                        flipPowerUps.speedpot
+                          ? 'bg-orange-600 text-white'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                    >
+                      Speedpot ({gameState.flip.powerUpQuota.speedpot})
+                    </button>
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Submit button */}
               <button

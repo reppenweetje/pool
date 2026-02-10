@@ -12,6 +12,7 @@ export interface PowerUpQuota {
   pullThePlug: number;            // 1x per maand
   sniper: number;                 // 3x per maand
   speedpot: number;               // 2x per maand
+  doubleTrouble: number;          // 2x per maand
   // BBC is onbeperkt, dus geen quota
 }
 
@@ -23,20 +24,27 @@ export const INITIAL_POWER_UP_QUOTA: PowerUpQuota = {
   pullThePlug: 1,
   sniper: 3,
   speedpot: 2,
+  doubleTrouble: 2,
 };
 
 export interface PowerUpUsage {
-  ballenBakBizarre?: boolean;     // Winnaar: streak += tegenstander ballen
-  cumbackKid?: boolean;           // Verliezer: streak = winnaar streak - 1
+  ballenBakBizarre?: boolean;     // streak += tegenstander ballen
+  cumbackKid?: boolean;           // streak = andere speler streak - 1
   toep?: boolean;                 // Eigen streak +1
-  ballenBak?: boolean;            // Verliezer betaalt €2 per bal
+  ballenBak?: boolean;            // Tegenstander betaalt €2 per bal
   pullThePlug?: boolean;          // Reset tegenstander streak naar 0
-  sniper?: {                      // 3 ballen = +1 level, 4 ballen = x2 levels
-    ballsPotted: 3 | 4;
+  sniper?: {                      // Bonus voor reeksen
+    ballsPotted: number;          // Aantal ballen gepot (3+ = bonus)
+    successful: boolean;          // Was de poging succesvol?
   };
   speedpot?: boolean;             // Activeert 5-seconden regel
-  bbc?: boolean;                  // Zwarte bal bij afstoot = €5 bonus
+  doubleTrouble?: {               // Verdubbel de inzet
+    ballsPotted: number;          // Aantal ballen gepot
+    successful: boolean;          // Was de poging succesvol?
+  };
 }
+
+export type WinCondition = 'normal' | 'blackBall'; // normal = normaal gewonnen, blackBall = tegenstander potte zwarte bal te vroeg
 
 export interface Player {
   name: PlayerName;
@@ -52,10 +60,11 @@ export interface MatchResult {
   month: string;                  // YYYY-MM format
   winner: PlayerName;
   loser: PlayerName;
+  winCondition: WinCondition;     // Hoe is het potje gewonnen?
   opponentBallsRemaining: number; // Ballen van verliezer op tafel
   powerUpsUsed: {
-    winner?: PowerUpUsage;
-    loser?: PowerUpUsage;
+    jesse?: PowerUpUsage;         // Jesse's power-ups (ongeacht win/verlies)
+    flip?: PowerUpUsage;          // Flip's power-ups (ongeacht win/verlies)
   };
   // Berekende waarden
   streakBefore: {
@@ -68,7 +77,7 @@ export interface MatchResult {
   };
   amountWon: number;              // Werkelijk bedrag gewonnen
   ballenBakBonus?: number;        // Extra boete bij Ballenbak power-up
-  bbcBonus?: boolean;             // €5 bonus voor zwarte bal
+  blackBallBonus?: boolean;       // €5 bonus voor zwarte bal win
   cappedAmount?: boolean;         // Was de winst gecapt vanwege limiet?
 }
 
@@ -89,8 +98,19 @@ export const MAX_DIFFERENCE_THRESHOLD = 150;        // €150 verschil limiet
 export const CAPPED_BASE_AMOUNT = 10;               // €10 cap bij limiet
 export const CAPPED_INCREMENT = 2;                  // €2 stijging per potje
 export const BALLENBAK_PENALTY_PER_BALL = 2;        // €2 per bal bij Ballenbak
-export const BBC_BONUS = 5;                         // €5 bonus bij BBC
+export const BLACK_BALL_BONUS = 5;                  // €5 bonus bij zwarte bal win
 export const DANGER_ZONE_STREAK = 6;                // Vanaf streak 6 is het gevaarlijk (€16+)
+
+// Sniper bonussen
+export function calculateSniperBonus(ballsPotted: number, currentStreak: number): number {
+  if (ballsPotted === 3) return 1;                  // +1 level
+  if (ballsPotted === 4) return 2;                  // +2 levels
+  if (ballsPotted >= 5) return 3;                   // +3 levels
+  return 0;
+}
+
+// Double Trouble: als succesvol, verdubbel je inzet (streak blijft gelijk maar bedrag x2)
+export const DOUBLE_TROUBLE_MULTIPLIER = 2;
 
 // ============================================================================
 // HELPER FUNCTIONS

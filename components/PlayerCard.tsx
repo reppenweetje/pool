@@ -91,22 +91,38 @@ export default function PlayerCard({ player, isWinning }: PlayerCardProps) {
         <div className="text-xs text-gray-400 uppercase tracking-wide mb-2">
           Power-ups beschikbaar
         </div>
-        <div className="grid grid-cols-4 gap-2 text-xs">
-          <div className="text-center">
+        <div className="grid grid-cols-4 gap-1.5 text-xs">
+          <div className="text-center bg-purple-900/30 rounded p-1.5">
             <div className="font-bold text-white">{player.powerUpQuota.ballenBakBizarre}</div>
-            <div className="text-gray-400">BBB</div>
+            <div className="text-gray-400 text-[10px]">BBB</div>
           </div>
-          <div className="text-center">
+          <div className="text-center bg-green-900/30 rounded p-1.5">
             <div className="font-bold text-white">{player.powerUpQuota.cumbackKid}</div>
-            <div className="text-gray-400">CK</div>
+            <div className="text-gray-400 text-[10px]">Cumback</div>
           </div>
-          <div className="text-center">
+          <div className="text-center bg-blue-900/30 rounded p-1.5">
             <div className="font-bold text-white">{player.powerUpQuota.toep}</div>
-            <div className="text-gray-400">Toep</div>
+            <div className="text-gray-400 text-[10px]">Toep</div>
           </div>
-          <div className="text-center">
+          <div className="text-center bg-red-900/30 rounded p-1.5">
+            <div className="font-bold text-white">{player.powerUpQuota.ballenBak}</div>
+            <div className="text-gray-400 text-[10px]">Ballenbak</div>
+          </div>
+          <div className="text-center bg-red-800/30 rounded p-1.5">
+            <div className="font-bold text-white">{player.powerUpQuota.pullThePlug}</div>
+            <div className="text-gray-400 text-[10px]">Pull Plug</div>
+          </div>
+          <div className="text-center bg-yellow-900/30 rounded p-1.5">
             <div className="font-bold text-white">{player.powerUpQuota.sniper}</div>
-            <div className="text-gray-400">Sniper</div>
+            <div className="text-gray-400 text-[10px]">Sniper</div>
+          </div>
+          <div className="text-center bg-pink-900/30 rounded p-1.5">
+            <div className="font-bold text-white">{player.powerUpQuota.doubleTrouble}</div>
+            <div className="text-gray-400 text-[10px]">Double</div>
+          </div>
+          <div className="text-center bg-orange-900/30 rounded p-1.5">
+            <div className="font-bold text-white">{player.powerUpQuota.speedpot}</div>
+            <div className="text-gray-400 text-[10px]">Speedpot</div>
           </div>
         </div>
       </div>
