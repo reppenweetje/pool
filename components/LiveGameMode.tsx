@@ -44,10 +44,18 @@ export default function LiveGameMode({ isOpen, onClose, onFinish }: LiveGameMode
     setLoading(true);
     try {
       const res = await fetch('/api/live-game', { method: 'POST' });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to start live game');
+      }
+      
       const newGame = await res.json();
       setLiveGame(newGame);
     } catch (error) {
       console.error('Failed to start live game:', error);
+      alert('Live mode vereist database setup. Gebruik eerst de reguliere match mode (+) of setup de database.');
+      onClose();
     }
     setLoading(false);
   };

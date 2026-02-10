@@ -26,16 +26,40 @@ export default function Home() {
   const fetchGameState = async () => {
     try {
       const res = await fetch('/api/game-state');
+      
+      // Check if request was successful
+      if (!res.ok) {
+        throw new Error('Database not available');
+      }
+      
       const data = await res.json();
+      
+      // Check if data has error
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
       setGameState(data);
     } catch (error) {
-      console.error('Failed to fetch game state:', error);
-      // Fallback to empty state
-      setGameState(initializeGameState());
+      console.error('Database not available, using local storage:', error);
+      
+      // Fallback to local storage
+      const { loadGameState } = await import('@/lib/storage');
+      const localState = loadGameState();
+      setGameState(localState);
     } finally {
       setLoading(false);
     }
   };
+
+  // Save to local storage on every state change (backup)
+  useEffect(() => {
+    if (gameState) {
+      import('@/lib/storage').then(({ saveGameState }) => {
+        saveGameState(gameState);
+      });
+    }
+  }, [gameState]);
 
   // Refresh game state periodically (elke 5 seconden als niet in live mode)
   useEffect(() => {
@@ -59,22 +83,41 @@ export default function Home() {
     jesseOwnBalls: number;
     flipOwnBalls: number;
   }) => {
+    if (!gameState) return;
+
     try {
+      // Try database first
       const res = await fetch('/api/matches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
-      if (!res.ok) throw new Error('Failed to save match');
+      if (!res.ok) throw new Error('Database not available');
 
       const newState = await res.json();
       setGameState(newState);
       setIsModalOpen(false);
     } catch (error) {
-      if (error instanceof Error) {
-        alert(error.message);
-      }
+      console.error('Database error, using local calculation:', error);
+      
+      // Fallback to local calculation
+      const { calculateMatch } = await import('@/lib/streakEngine');
+      const { saveGameState } = await import('@/lib/storage');
+      
+      const result = calculateMatch({
+        gameState,
+        winner: data.winner,
+        winCondition: data.winCondition,
+        opponentBallsRemaining: data.opponentBallsRemaining,
+        powerUpsUsed: data.powerUpsUsed,
+        jesseOwnBalls: data.jesseOwnBalls,
+        flipOwnBalls: data.flipOwnBalls,
+      });
+
+      setGameState(result.newGameState);
+      saveGameState(result.newGameState);
+      setIsModalOpen(false);
     }
   };
 

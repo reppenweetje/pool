@@ -5,6 +5,14 @@ import { PlayerName, WinCondition, PowerUpUsage } from '@/types';
 
 export async function POST(request: Request) {
   try {
+    // Check if database is configured
+    if (!process.env.POSTGRES_URL) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const {
       winner,

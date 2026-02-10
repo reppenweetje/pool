@@ -10,6 +10,13 @@ import {
 // GET - Haal actieve live game op
 export async function GET() {
   try {
+    if (!process.env.POSTGRES_URL) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     const liveGame = await getActiveLiveGame();
     return NextResponse.json(liveGame);
   } catch (error) {
@@ -24,6 +31,13 @@ export async function GET() {
 // POST - Start nieuwe live game
 export async function POST() {
   try {
+    if (!process.env.POSTGRES_URL) {
+      return NextResponse.json(
+        { error: 'Database not configured. Live mode requires database setup.' },
+        { status: 503 }
+      );
+    }
+
     const liveGame = await createLiveGame();
     return NextResponse.json(liveGame);
   } catch (error) {
@@ -38,6 +52,13 @@ export async function POST() {
 // PUT - Update live game (toep, balls, etc.)
 export async function PUT(request: Request) {
   try {
+    if (!process.env.POSTGRES_URL) {
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { action, liveGameId, ...data } = body;
 
