@@ -214,6 +214,37 @@ export default function Home() {
     saveGameState(result.newGameState);
   };
 
+  const handleCumbackKid = async (userPlayer: 'jesse' | 'flip') => {
+    if (!gameState) return;
+    
+    // Cumback Kid: verliezer benadert streak van winnaar
+    // We doen dit door een dummy match te maken waarbij de andere speler wint
+    // en deze speler Cumback Kid gebruikt als verliezer
+    const { calculateMatch } = await import('@/lib/streakEngine');
+    const { saveGameState } = await import('@/lib/storage');
+    
+    const otherPlayer: PlayerName = userPlayer === 'jesse' ? 'Flip' : 'Jesse';
+    
+    const powerUpsUsed = {
+      [userPlayer]: { cumbackKid: true } as PowerUpUsage,
+    };
+    
+    // Create a dummy match with Cumback Kid
+    const result = calculateMatch({
+      gameState,
+      winner: otherPlayer,
+      winCondition: 'normal',
+      opponentBallsRemaining: 0,
+      powerUpsUsed,
+      jesseOwnBalls: 0,
+      flipOwnBalls: 0,
+      toepStakeMultiplier: 0,
+    });
+    
+    setGameState(result.newGameState);
+    saveGameState(result.newGameState);
+  };
+
   const handleReset = async () => {
     if (!confirm('⚠️ WAARSCHUWING: Dit verwijdert ALLE data!\n\n- Alle potjes worden gewist\n- Alle streaks worden gereset\n- Alle power-ups worden gereset\n\nWeet je het ZEKER?')) {
       return;
