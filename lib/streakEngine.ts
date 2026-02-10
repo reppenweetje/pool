@@ -8,7 +8,6 @@ import {
   MatchResult,
   PowerUpUsage,
   GameState,
-  WinCondition,
   calculateStreakAmount,
   isCapActive,
   calculateCappedAmount,
@@ -24,7 +23,7 @@ import {
 interface CalculateMatchParams {
   gameState: GameState;
   winner: PlayerName;
-  winCondition: WinCondition;
+  winCondition: 'normal';
   opponentBallsRemaining: number;
   powerUpsUsed: {
     jesse?: PowerUpUsage;
@@ -45,7 +44,7 @@ interface CalculateMatchResult {
  * Dit is de kern van het spel - alle regels komen hier samen
  */
 export function calculateMatch(params: CalculateMatchParams): CalculateMatchResult {
-  const { gameState, winner, winCondition, opponentBallsRemaining, powerUpsUsed, jesseOwnBalls = 0, flipOwnBalls = 0, toepStakeMultiplier = 1 } = params;
+  const { gameState, winner, opponentBallsRemaining, powerUpsUsed, jesseOwnBalls = 0, flipOwnBalls = 0, toepStakeMultiplier = 1 } = params;
   
   const loser: PlayerName = winner === 'Jesse' ? 'Flip' : 'Jesse';
   const jessePlayer = { ...gameState.jesse };
@@ -212,11 +211,16 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
     }
   }
 
-  // BLACK BALL BONUS (winnaar wint doordat verliezer zwarte bal te vroeg potte)
+  // BBC BONUS (zwarte bal bij afstoot power-up)
   let blackBallBonus = false;
-  if (winCondition === 'blackBall') {
+  if (winnerPowerUps.bbc) {
     amountWon += BLACK_BALL_BONUS;
     blackBallBonus = true;
+    if (winner === 'Jesse') {
+      jessePlayer.powerUpQuota.bbc--;
+    } else {
+      flipPlayer.powerUpQuota.bbc--;
+    }
   }
 
   // ============================================================================
@@ -251,7 +255,7 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
     month: currentMonth,
     winner,
     loser,
-    winCondition,
+    winCondition: 'normal',
     opponentBallsRemaining,
     powerUpsUsed: {
       jesse: Object.keys(jessePowerUps).length > 0 ? jessePowerUps : undefined,

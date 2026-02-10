@@ -62,7 +62,7 @@ export interface MatchResult {
   month: string;                  // YYYY-MM format
   winner: PlayerName;
   loser: PlayerName;
-  winCondition: WinCondition;     // Hoe is het potje gewonnen?
+  winCondition: 'normal';         // Altijd normal (BB is nu power-up)
   opponentBallsRemaining: number; // Ballen van verliezer op tafel
   powerUpsUsed: {
     jesse?: PowerUpUsage;         // Jesse's power-ups (ongeacht win/verlies)

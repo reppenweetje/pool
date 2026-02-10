@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { PlayerName, PowerUpUsage, GameState, WinCondition } from '@/types';
-import { X, Check, AlertCircle } from 'lucide-react';
+import { PlayerName, PowerUpUsage, GameState } from '@/types';
+import { X, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface MatchInputModalProps {

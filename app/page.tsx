@@ -74,7 +74,7 @@ export default function Home() {
 
   const handleNewMatch = async (data: {
     winner: PlayerName;
-    winCondition: 'normal' | 'blackBall';
+    winCondition: 'normal';
     opponentBallsRemaining: number;
     powerUpsUsed: {
       jesse?: PowerUpUsage;

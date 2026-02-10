@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { saveMatch, getOrCreateGameSession } from '@/lib/db/client';
 import { calculateMatch } from '@/lib/streakEngine';
-import { PlayerName, WinCondition, PowerUpUsage } from '@/types';
+import { PlayerName, PowerUpUsage } from '@/types';
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +16,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       winner,
-      winCondition,
       opponentBallsRemaining,
       powerUpsUsed,
       jesseOwnBalls,
@@ -24,7 +23,6 @@ export async function POST(request: Request) {
       toepStakeMultiplier,
     }: {
       winner: PlayerName;
-      winCondition: WinCondition;
       opponentBallsRemaining: number;
       powerUpsUsed: {
         jesse?: PowerUpUsage;
@@ -42,7 +40,7 @@ export async function POST(request: Request) {
     const result = calculateMatch({
       gameState,
       winner,
-      winCondition,
+      winCondition: 'normal',
       opponentBallsRemaining,
       powerUpsUsed,
       jesseOwnBalls,
