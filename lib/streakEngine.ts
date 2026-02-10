@@ -32,6 +32,7 @@ interface CalculateMatchParams {
   };
   jesseOwnBalls?: number;
   flipOwnBalls?: number;
+  toepStakeMultiplier?: number; // Voor live games met toep (1=normaal, 2=getoept, 3=overgetoept, etc.)
 }
 
 interface CalculateMatchResult {
@@ -44,7 +45,7 @@ interface CalculateMatchResult {
  * Dit is de kern van het spel - alle regels komen hier samen
  */
 export function calculateMatch(params: CalculateMatchParams): CalculateMatchResult {
-  const { gameState, winner, winCondition, opponentBallsRemaining, powerUpsUsed, jesseOwnBalls = 0, flipOwnBalls = 0 } = params;
+  const { gameState, winner, winCondition, opponentBallsRemaining, powerUpsUsed, jesseOwnBalls = 0, flipOwnBalls = 0, toepStakeMultiplier = 1 } = params;
   
   const loser: PlayerName = winner === 'Jesse' ? 'Flip' : 'Jesse';
   const jessePlayer = { ...gameState.jesse };
@@ -119,12 +120,12 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
 
   if (loserUsedCumbackKid) {
     // Als verliezer Cumback Kid gebruikte EN winnaar wint toch:
-    // Winnaar krijgt +2 (Streaker bonus)
-    newWinnerStreak = newWinnerStreak + 2;
+    // Winnaar krijgt +2 (Streaker bonus) * toep multiplier
+    newWinnerStreak = newWinnerStreak + (2 * toepStakeMultiplier);
     // Verliezer behoudt zijn cumback streak
   } else {
-    // Normale streak progression
-    newWinnerStreak = newWinnerStreak + 1;
+    // Normale streak progression * toep multiplier
+    newWinnerStreak = newWinnerStreak + (1 * toepStakeMultiplier);
     newLoserStreak = 0; // Verliezer reset naar 0
   }
 

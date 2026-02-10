@@ -2,34 +2,53 @@
 
 import { useState, useEffect } from 'react';
 import { GameState, PlayerName, PowerUpUsage } from '@/types';
-import { calculateMatch, initializeGameState, removeMatch } from '@/lib/streakEngine';
-import { loadGameState, saveGameState, clearGameState } from '@/lib/storage';
+import { removeMatch, initializeGameState } from '@/lib/streakEngine';
 import PlayerCard from '@/components/PlayerCard';
 import MatchInputModal from '@/components/MatchInputModal';
 import MatchHistory from '@/components/MatchHistory';
-import { Plus, History, Settings, Trophy, RotateCcw } from 'lucide-react';
+import LiveGameMode from '@/components/LiveGameMode';
+import { Plus, History, Settings, Trophy, RotateCcw, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Home() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLiveMode, setIsLiveMode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Load game state on mount
+  // Load game state from database
   useEffect(() => {
-    const loaded = loadGameState();
-    setGameState(loaded);
+    fetchGameState();
   }, []);
 
-  // Save game state on every change
-  useEffect(() => {
-    if (gameState) {
-      saveGameState(gameState);
+  const fetchGameState = async () => {
+    try {
+      const res = await fetch('/api/game-state');
+      const data = await res.json();
+      setGameState(data);
+    } catch (error) {
+      console.error('Failed to fetch game state:', error);
+      // Fallback to empty state
+      setGameState(initializeGameState());
+    } finally {
+      setLoading(false);
     }
-  }, [gameState]);
+  };
 
-  const handleNewMatch = (data: {
+  // Refresh game state periodically (elke 5 seconden als niet in live mode)
+  useEffect(() => {
+    if (isLiveMode) return; // Geen refresh tijdens live mode
+
+    const interval = setInterval(() => {
+      fetchGameState();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isLiveMode]);
+
+  const handleNewMatch = async (data: {
     winner: PlayerName;
     winCondition: 'normal' | 'blackBall';
     opponentBallsRemaining: number;
@@ -40,20 +59,17 @@ export default function Home() {
     jesseOwnBalls: number;
     flipOwnBalls: number;
   }) => {
-    if (!gameState) return;
-
     try {
-      const result = calculateMatch({
-        gameState,
-        winner: data.winner,
-        winCondition: data.winCondition,
-        opponentBallsRemaining: data.opponentBallsRemaining,
-        powerUpsUsed: data.powerUpsUsed,
-        jesseOwnBalls: data.jesseOwnBalls,
-        flipOwnBalls: data.flipOwnBalls,
+      const res = await fetch('/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       });
 
-      setGameState(result.newGameState);
+      if (!res.ok) throw new Error('Failed to save match');
+
+      const newState = await res.json();
+      setGameState(newState);
       setIsModalOpen(false);
     } catch (error) {
       if (error instanceof Error) {
@@ -62,10 +78,61 @@ export default function Home() {
     }
   };
 
-  const handleRemoveMatch = (matchId: string) => {
+  const handleLiveGameFinish = async (winner: PlayerName, jesseBalls: number, flipBalls: number) => {
+    // Fetch live game voor toep stake
+    try {
+      const liveRes = await fetch('/api/live-game');
+      const liveGame = await liveRes.json();
+
+      const toepStake = liveGame?.currentToepStake || 1;
+      const loser: PlayerName = winner === 'Jesse' ? 'Flip' : 'Jesse';
+      const opponentBalls = winner === 'Jesse' ? flipBalls : jesseBalls;
+
+      // Als toep geweigerd werd, gebruik stake 1, anders gebruik de toep stake
+      const actualStake = liveGame?.toepResponse === 'rejected' ? 1 : toepStake;
+
+      // Save match via API met toep multiplier
+      const res = await fetch('/api/matches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          winner,
+          winCondition: 'normal',
+          opponentBallsRemaining: opponentBalls,
+          powerUpsUsed: {},
+          jesseOwnBalls: jesseBalls,
+          flipOwnBalls: flipBalls,
+          toepStakeMultiplier: actualStake,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Failed to save match');
+
+      const newState = await res.json();
+      setGameState(newState);
+
+      // Close live game
+      await fetch('/api/live-game', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          liveGameId: liveGame.id,
+          status: 'finished',
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to finish live game:', error);
+      alert('Er ging iets mis bij het afronden van het potje');
+    }
+  };
+
+  const handleRemoveMatch = async (matchId: string) => {
     if (!gameState) return;
 
     try {
+      // TODO: Implement delete match API endpoint
+      // For now, use client-side removal
       const newState = removeMatch(gameState, matchId);
       setGameState(newState);
     } catch (error) {
@@ -77,16 +144,23 @@ export default function Home() {
 
   const handleReset = () => {
     if (confirm('Weet je zeker dat je alle data wilt resetten? Dit kan niet ongedaan gemaakt worden.')) {
-      clearGameState();
-      const newState = initializeGameState();
-      setGameState(newState);
+      // TODO: Implement reset API endpoint
+      alert('Reset functionaliteit komt binnenkort via database');
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-poolGreen">
+        <div className="text-white text-xl">Laden...</div>
+      </div>
+    );
+  }
+
   if (!gameState) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-xl">Laden...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-poolGreen">
+        <div className="text-white text-xl">Error loading game state</div>
       </div>
     );
   }
@@ -140,12 +214,15 @@ export default function Home() {
           className="max-w-4xl mx-auto mb-6 bg-gray-800 rounded-2xl p-6"
         >
           <h2 className="text-xl font-bold text-white mb-4">Instellingen</h2>
+          <p className="text-sm text-gray-400 mb-4">
+            Data wordt nu opgeslagen in de database. Alle wijzigingen zijn permanent.
+          </p>
           <button
             onClick={handleReset}
             className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-colors"
           >
             <RotateCcw className="w-5 h-5" />
-            Alles Resetten
+            Alles Resetten (komt binnenkort)
           </button>
         </motion.div>
       )}
@@ -173,15 +250,30 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Floating Action Button */}
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setIsModalOpen(true)}
-        className="fixed bottom-8 right-8 w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full shadow-2xl flex items-center justify-center text-white hover:shadow-green-500/50 transition-shadow"
-      >
-        <Plus className="w-8 h-8" />
-      </motion.button>
+      {/* Floating Action Buttons */}
+      <div className="fixed bottom-8 right-8 flex flex-col gap-4">
+        {/* Live Game Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsLiveMode(true)}
+          className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-full shadow-2xl flex items-center justify-center text-white hover:shadow-yellow-500/50 transition-shadow"
+          title="Live Potje (met TOEP)"
+        >
+          <Zap className="w-8 h-8" fill="currentColor" />
+        </motion.button>
+
+        {/* Regular Match Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsModalOpen(true)}
+          className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full shadow-2xl flex items-center justify-center text-white hover:shadow-green-500/50 transition-shadow"
+          title="Regulier Potje"
+        >
+          <Plus className="w-8 h-8" />
+        </motion.button>
+      </div>
 
       {/* Match Input Modal */}
       <MatchInputModal
@@ -189,6 +281,13 @@ export default function Home() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleNewMatch}
         gameState={gameState}
+      />
+
+      {/* Live Game Mode */}
+      <LiveGameMode
+        isOpen={isLiveMode}
+        onClose={() => setIsLiveMode(false)}
+        onFinish={handleLiveGameFinish}
       />
     </main>
   );
