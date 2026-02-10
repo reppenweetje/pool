@@ -2,21 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Zap, Trophy, Flame, CheckCircle } from 'lucide-react';
+import { X, Zap, Trophy, Flame, CheckCircle, Sparkles } from 'lucide-react';
 import { LiveGame } from '@/lib/db/client';
-import { PlayerName } from '@/types';
+import { PlayerName, PowerUpUsage } from '@/types';
 import ToepModal from './ToepModal';
+import PowerUpFlash from './PowerUpFlash';
 
 interface LiveGameModeProps {
   isOpen: boolean;
   onClose: () => void;
-  onFinish: (winner: PlayerName, jesseBalls: number, flipBalls: number, toepStake: number) => void;
+  onFinish: (winner: PlayerName, jesseBalls: number, flipBalls: number, toepStake: number, powerUpsUsed: { jesse?: PowerUpUsage; flip?: PowerUpUsage }) => void;
+  gameState: any; // Voor power-up quota
 }
 
-export default function LiveGameMode({ isOpen, onClose, onFinish }: LiveGameModeProps) {
+export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: LiveGameModeProps) {
   const [liveGame, setLiveGame] = useState<LiveGame | null>(null);
   const [loading, setLoading] = useState(false);
   const [showToepModal, setShowToepModal] = useState(false);
+  const [jessePowerUps, setJessePowerUps] = useState<PowerUpUsage>({});
+  const [flipPowerUps, setFlipPowerUps] = useState<PowerUpUsage>({});
+  const [showPowerUpFlash, setShowPowerUpFlash] = useState(false);
+  const [lastPowerUp, setLastPowerUp] = useState({ player: '', name: '' });
 
   // Polling interval - check elke 2 seconden voor updates
   useEffect(() => {
@@ -169,10 +175,44 @@ export default function LiveGameMode({ isOpen, onClose, onFinish }: LiveGameMode
     }
   };
 
+  const togglePowerUp = (player: 'jesse' | 'flip', powerUp: keyof PowerUpUsage) => {
+    const setPowerUps = player === 'jesse' ? setJessePowerUps : setFlipPowerUps;
+    const powerUps = player === 'jesse' ? jessePowerUps : flipPowerUps;
+    const playerName = player === 'jesse' ? 'Jesse' : 'Flip';
+    
+    setPowerUps(prev => {
+      const newPowerUps = { ...prev };
+      if (powerUp in newPowerUps) {
+        delete newPowerUps[powerUp];
+      } else {
+        (newPowerUps as any)[powerUp] = true;
+        
+        // Show flash
+        setLastPowerUp({ player: playerName, name: String(powerUp) });
+        setShowPowerUpFlash(true);
+        setTimeout(() => setShowPowerUpFlash(false), 1500);
+      }
+      return newPowerUps;
+    });
+  };
+
   const handleFinishGame = (winner: PlayerName) => {
     if (!liveGame) return;
-    onFinish(winner, liveGame.jesseBallsRemaining, liveGame.flipBallsRemaining, liveGame.currentToepStake);
+    onFinish(
+      winner, 
+      liveGame.jesseBallsRemaining, 
+      liveGame.flipBallsRemaining, 
+      liveGame.currentToepStake,
+      {
+        jesse: Object.keys(jessePowerUps).length > 0 ? jessePowerUps : undefined,
+        flip: Object.keys(flipPowerUps).length > 0 ? flipPowerUps : undefined,
+      }
+    );
     onClose();
+    
+    // Reset voor volgend potje
+    setJessePowerUps({});
+    setFlipPowerUps({});
   };
 
   if (!isOpen) return null;
@@ -258,6 +298,77 @@ export default function LiveGameMode({ isOpen, onClose, onFinish }: LiveGameMode
                   </div>
                 </div>
               </motion.div>
+
+              {/* Power-ups Section */}
+              <div className="mb-6 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-2xl p-4 border border-purple-500/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  <h3 className="text-sm font-bold text-purple-300 uppercase">Power-ups activeren</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Jesse Power-ups */}
+                  <div className="space-y-2">
+                    <p className="text-xs text-blue-300 font-semibold">Jesse</p>
+                    <div className="flex flex-wrap gap-1">
+                      {gameState?.jesse.powerUpQuota.ballenBak > 0 && (
+                        <button
+                          onClick={() => togglePowerUp('jesse', 'ballenBak')}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            jessePowerUps.ballenBak
+                              ? 'bg-red-600 text-white shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          Ballenbak
+                        </button>
+                      )}
+                      {gameState?.jesse.powerUpQuota.bbc > 0 && (
+                        <button
+                          onClick={() => togglePowerUp('jesse', 'bbc')}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            jessePowerUps.bbc
+                              ? 'bg-black text-yellow-400 ring-1 ring-yellow-400 shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          BBC
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Flip Power-ups */}
+                  <div className="space-y-2">
+                    <p className="text-xs text-orange-300 font-semibold">Flip</p>
+                    <div className="flex flex-wrap gap-1">
+                      {gameState?.flip.powerUpQuota.ballenBak > 0 && (
+                        <button
+                          onClick={() => togglePowerUp('flip', 'ballenBak')}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            flipPowerUps.ballenBak
+                              ? 'bg-red-600 text-white shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          Ballenbak
+                        </button>
+                      )}
+                      {gameState?.flip.powerUpQuota.bbc > 0 && (
+                        <button
+                          onClick={() => togglePowerUp('flip', 'bbc')}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            flipPowerUps.bbc
+                              ? 'bg-black text-yellow-400 ring-1 ring-yellow-400 shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          BBC
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Ball Counters */}
               <div className="grid grid-cols-2 gap-4 mb-6">
@@ -368,6 +479,13 @@ export default function LiveGameMode({ isOpen, onClose, onFinish }: LiveGameMode
             onReject={handleToepReject}
           />
         )}
+
+        {/* Power-up Flash */}
+        <PowerUpFlash
+          isVisible={showPowerUpFlash}
+          powerUpName={lastPowerUp.name}
+          playerName={lastPowerUp.player}
+        />
       </motion.div>
     </AnimatePresence>
   );

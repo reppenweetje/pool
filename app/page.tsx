@@ -7,7 +7,7 @@ import PlayerCard from '@/components/PlayerCard';
 import MatchInputModal from '@/components/MatchInputModal';
 import MatchHistory from '@/components/MatchHistory';
 import LiveGameMode from '@/components/LiveGameMode';
-import { Plus, History, Settings, Trophy, RotateCcw, Zap } from 'lucide-react';
+import { Plus, History, Settings, Trophy, RotateCcw, Zap, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Home() {
@@ -121,7 +121,7 @@ export default function Home() {
     }
   };
 
-  const handleLiveGameFinish = async (winner: PlayerName, jesseBalls: number, flipBalls: number, toepStake: number) => {
+  const handleLiveGameFinish = async (winner: PlayerName, jesseBalls: number, flipBalls: number, toepStake: number, powerUpsUsed: { jesse?: PowerUpUsage; flip?: PowerUpUsage }) => {
     // Fetch live game voor toep stake
     try {
       const liveRes = await fetch('/api/live-game');
@@ -134,7 +134,7 @@ export default function Home() {
       // Use the toepStake directly (already handled in LiveGameMode)
       const actualStake = toepStake;
 
-      // Save match via API met toep multiplier
+      // Save match via API met toep multiplier en power-ups
       const res = await fetch('/api/matches', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -142,7 +142,7 @@ export default function Home() {
           winner,
           winCondition: 'normal',
           opponentBallsRemaining: opponentBalls,
-          powerUpsUsed: {},
+          powerUpsUsed,
           jesseOwnBalls: jesseBalls,
           flipOwnBalls: flipBalls,
           toepStakeMultiplier: actualStake,
@@ -185,10 +185,29 @@ export default function Home() {
     }
   };
 
-  const handleReset = () => {
-    if (confirm('Weet je zeker dat je alle data wilt resetten? Dit kan niet ongedaan gemaakt worden.')) {
-      // TODO: Implement reset API endpoint
-      alert('Reset functionaliteit komt binnenkort via database');
+  const handleReset = async () => {
+    if (!confirm('⚠️ WAARSCHUWING: Dit verwijdert ALLE data!\n\n- Alle potjes worden gewist\n- Alle streaks worden gereset\n- Alle power-ups worden gereset\n\nWeet je het ZEKER?')) {
+      return;
+    }
+
+    if (!confirm('Laatste kans! Dit kan NIET ongedaan gemaakt worden.\n\nDoorgaan met resetten?')) {
+      return;
+    }
+
+    try {
+      // Clear local storage
+      const { clearGameState } = await import('@/lib/storage');
+      clearGameState();
+      
+      // Reset to initial state
+      const newState = initializeGameState();
+      setGameState(newState);
+      
+      alert('✅ Alle data is gereset! De competitie begint opnieuw.');
+      setShowSettings(false);
+    } catch (error) {
+      console.error('Reset failed:', error);
+      alert('Er ging iets mis bij het resetten. Probeer opnieuw.');
     }
   };
 
@@ -254,19 +273,32 @@ export default function Home() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-4xl mx-auto mb-6 bg-gray-800 rounded-2xl p-6"
+          className="max-w-4xl mx-auto mb-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-6 border border-gray-700"
         >
-          <h2 className="text-xl font-bold text-white mb-4">Instellingen</h2>
-          <p className="text-sm text-gray-400 mb-4">
-            Data wordt nu opgeslagen in de database. Alle wijzigingen zijn permanent.
+          <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+            <Settings className="w-6 h-6" />
+            Instellingen
+          </h2>
+          <p className="text-sm text-gray-400 mb-6">
+            Data wordt opgeslagen in local storage. Bij database setup ook in de cloud.
           </p>
-          <button
-            onClick={handleReset}
-            className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-colors"
-          >
-            <RotateCcw className="w-5 h-5" />
-            Alles Resetten (komt binnenkort)
-          </button>
+          
+          <div className="bg-red-900/20 border border-red-600/50 rounded-xl p-4 mb-4">
+            <h3 className="text-sm font-bold text-red-400 mb-2 uppercase flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              Gevaarlijke Zone
+            </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              Dit verwijdert ALLE data: matches, streaks, en power-ups. Kan niet ongedaan gemaakt worden!
+            </p>
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-red-500/50"
+            >
+              <RotateCcw className="w-5 h-5" />
+              Alles Resetten
+            </button>
+          </div>
         </motion.div>
       )}
 
@@ -331,6 +363,7 @@ export default function Home() {
         isOpen={isLiveMode}
         onClose={() => setIsLiveMode(false)}
         onFinish={handleLiveGameFinish}
+        gameState={gameState}
       />
     </main>
   );

@@ -46,6 +46,35 @@ export default function PlayerCard({ player, isWinning }: PlayerCardProps) {
 
       {/* Streak & Bedrag Combined */}
       <div className="mb-3 relative">
+        {/* On Fire Badge - bij streak > 0 */}
+        {player.streak > 0 && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-2 -right-2 z-10"
+          >
+            <motion.div
+              animate={{
+                rotate: [0, -5, 5, -5, 0],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="bg-gradient-to-br from-orange-500 to-red-600 rounded-full p-1.5 shadow-lg shadow-orange-500/50"
+            >
+              <Flame className="w-4 h-4 text-white" fill="currentColor" />
+            </motion.div>
+            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <motion.span
+                animate={{ opacity: [0.7, 1, 0.7] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="text-[8px] font-black text-orange-400 uppercase tracking-wider drop-shadow-lg"
+              >
+                ON FIRE
+              </motion.span>
+            </div>
+          </motion.div>
+        )}
+        
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <motion.div
