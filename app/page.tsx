@@ -8,6 +8,7 @@ import MatchInputModal from '@/components/MatchInputModal';
 import MatchHistory from '@/components/MatchHistory';
 import LiveGameMode from '@/components/LiveGameMode';
 import PullThePlugButton from '@/components/PullThePlugButton';
+import CumbackKidButton from '@/components/CumbackKidButton';
 import { Plus, History, Settings, Trophy, RotateCcw, Zap, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
