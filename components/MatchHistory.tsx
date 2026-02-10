@@ -73,10 +73,10 @@ export default function MatchHistory({ matches, onRemoveMatch }: MatchHistoryPro
               <div>
                 {match.loser}: {match.opponentBallsRemaining} ballen over
               </div>
-              {match.winCondition === 'blackBall' && (
+              {match.blackBallBonus && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-yellow-900/40 text-yellow-300 rounded-lg font-semibold">
                   <Gift className="w-4 h-4" />
-                  <span>BB +€5</span>
+                  <span>BBC +€5</span>
                 </div>
               )}
               {match.ballenBakBonus && (
