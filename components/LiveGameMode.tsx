@@ -82,8 +82,11 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
       return;
     }
 
-    // Check if same player is trying to toep again (not allowed)
-    if (liveGame.toepInitiatedBy === player && liveGame.currentToepStake > 0) {
+    // Check if same player is trying to toep again (not allowed!)
+    // Als toep_initiated_by === player, dan heeft DEZE speler net getoept
+    // Dan mag deze speler NIET direct overtoepen - alleen de ANDER mag dat
+    if (liveGame.toepInitiatedBy === player) {
+      console.log(`${player} heeft net getoept, mag niet direct overtoepen!`);
       return;
     }
 
@@ -257,9 +260,20 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
   if (!isOpen) return null;
 
   const responder = liveGame?.toepInitiatedBy === 'Jesse' ? 'Flip' : 'Jesse';
-  const currentStake = liveGame?.currentToepStake || 1;
-  const jesseCanToep = !liveGame?.toepInitiatedBy || liveGame.toepInitiatedBy === 'Flip';
-  const flipCanToep = !liveGame?.toepInitiatedBy || liveGame.toepInitiatedBy === 'Jesse';
+  const currentStake = liveGame?.currentToepStake || 0;
+  
+  // Jesse kan toepen als:
+  // 1. Er is geen pending toep (toepResponse !== 'pending')
+  // 2. EN (niemand heeft getoept OF Flip was de laatste die toepte)
+  const jesseCanToep = liveGame?.toepResponse !== 'pending' && 
+    (!liveGame?.toepInitiatedBy || liveGame.toepInitiatedBy === 'Flip');
+  
+  // Flip kan toepen als:
+  // 1. Er is geen pending toep (toepResponse !== 'pending')
+  // 2. EN (niemand heeft getoept OF Jesse was de laatste die toepte)
+  const flipCanToep = liveGame?.toepResponse !== 'pending' && 
+    (!liveGame?.toepInitiatedBy || liveGame.toepInitiatedBy === 'Jesse');
+  
   const toepButtonText = currentStake === 0 ? 'TOEP' : 'OVERTOEP';
 
   return (
