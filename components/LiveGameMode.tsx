@@ -87,6 +87,15 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
       return;
     }
 
+    // Check power-up quota
+    const playerLower = player.toLowerCase() as 'jesse' | 'flip';
+    const toepQuota = gameState?.[playerLower]?.powerUpQuota?.toep || 0;
+    
+    if (toepQuota <= 0) {
+      alert(`${player} heeft geen Toep power-ups meer! (Max 5x per maand)`);
+      return;
+    }
+
     try {
       const res = await fetch('/api/live-game', {
         method: 'PUT',
@@ -100,6 +109,13 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
       const updated = await res.json();
       setLiveGame(updated);
       setShowToepModal(true);
+      
+      // Track toep usage (will be deducted on finish)
+      if (player === 'Jesse') {
+        setJessePowerUps(prev => ({ ...prev, toep: true }));
+      } else {
+        setFlipPowerUps(prev => ({ ...prev, toep: true }));
+      }
     } catch (error) {
       console.error('Failed to toep:', error);
     }
@@ -316,13 +332,13 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
               <div className="mb-6 bg-gradient-to-r from-purple-900/20 to-pink-900/20 rounded-2xl p-4 border border-purple-500/30">
                 <div className="flex items-center gap-2 mb-3">
                   <Sparkles className="w-5 h-5 text-purple-400" />
-                  <h3 className="text-sm font-bold text-purple-300 uppercase">Power-ups activeren</h3>
+                  <h3 className="text-sm font-bold text-purple-300 uppercase">Power-ups tijdens potje</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   {/* Jesse Power-ups */}
                   <div className="space-y-2">
-                    <p className="text-xs text-blue-300 font-semibold">Jesse</p>
-                    <div className="flex flex-wrap gap-1">
+                    <p className="text-xs text-blue-300 font-semibold">Jesse ({gameState?.jesse.powerUpQuota.toep || 0} toeps)</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {gameState?.jesse.powerUpQuota.ballenBak > 0 && (
                         <button
                           onClick={() => togglePowerUp('jesse', 'ballenBak')}
@@ -344,7 +360,43 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                               : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          BBC
+                          BBC +€5
+                        </button>
+                      )}
+                      {gameState?.jesse.powerUpQuota.sniper > 0 && (
+                        <button
+                          onClick={() => {
+                            const balls = prompt('Hoeveel ballen achter elkaar? (3+)');
+                            if (balls && Number(balls) >= 3) {
+                              togglePowerUp('jesse', 'sniper');
+                              setJessePowerUps(prev => ({ ...prev, sniper: { ballsPotted: Number(balls), successful: true }}));
+                            }
+                          }}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            jessePowerUps.sniper
+                              ? 'bg-yellow-600 text-white shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          Sniper
+                        </button>
+                      )}
+                      {gameState?.jesse.powerUpQuota.doubleTrouble > 0 && (
+                        <button
+                          onClick={() => {
+                            const balls = prompt('Hoeveel ballen achter elkaar? (3+)');
+                            if (balls && Number(balls) >= 3) {
+                              togglePowerUp('jesse', 'doubleTrouble');
+                              setJessePowerUps(prev => ({ ...prev, doubleTrouble: { ballsPotted: Number(balls), successful: true }}));
+                            }
+                          }}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            jessePowerUps.doubleTrouble
+                              ? 'bg-pink-600 text-white shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          Double
                         </button>
                       )}
                     </div>
@@ -352,8 +404,8 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                   
                   {/* Flip Power-ups */}
                   <div className="space-y-2">
-                    <p className="text-xs text-orange-300 font-semibold">Flip</p>
-                    <div className="flex flex-wrap gap-1">
+                    <p className="text-xs text-orange-300 font-semibold">Flip ({gameState?.flip.powerUpQuota.toep || 0} toeps)</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {gameState?.flip.powerUpQuota.ballenBak > 0 && (
                         <button
                           onClick={() => togglePowerUp('flip', 'ballenBak')}
@@ -375,7 +427,43 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                               : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          BBC
+                          BBC +€5
+                        </button>
+                      )}
+                      {gameState?.flip.powerUpQuota.sniper > 0 && (
+                        <button
+                          onClick={() => {
+                            const balls = prompt('Hoeveel ballen achter elkaar? (3+)');
+                            if (balls && Number(balls) >= 3) {
+                              togglePowerUp('flip', 'sniper');
+                              setFlipPowerUps(prev => ({ ...prev, sniper: { ballsPotted: Number(balls), successful: true }}));
+                            }
+                          }}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            flipPowerUps.sniper
+                              ? 'bg-yellow-600 text-white shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          Sniper
+                        </button>
+                      )}
+                      {gameState?.flip.powerUpQuota.doubleTrouble > 0 && (
+                        <button
+                          onClick={() => {
+                            const balls = prompt('Hoeveel ballen achter elkaar? (3+)');
+                            if (balls && Number(balls) >= 3) {
+                              togglePowerUp('flip', 'doubleTrouble');
+                              setFlipPowerUps(prev => ({ ...prev, doubleTrouble: { ballsPotted: Number(balls), successful: true }}));
+                            }
+                          }}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            flipPowerUps.doubleTrouble
+                              ? 'bg-pink-600 text-white shadow-lg'
+                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          Double
                         </button>
                       )}
                     </div>

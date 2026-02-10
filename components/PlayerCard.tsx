@@ -158,18 +158,22 @@ export default function PlayerCard({ player, isWinning }: PlayerCardProps) {
             <div className="text-gray-400">Plug</div>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-1 text-[10px] mt-1">
+        <div className="grid grid-cols-4 gap-1 text-[10px] mt-1">
           <div className="text-center bg-yellow-900/40 rounded px-1 py-1">
             <div className="font-bold text-white text-sm">{player.powerUpQuota.sniper}</div>
             <div className="text-gray-400">Sniper</div>
           </div>
           <div className="text-center bg-pink-900/40 rounded px-1 py-1">
             <div className="font-bold text-white text-sm">{player.powerUpQuota.doubleTrouble}</div>
-            <div className="text-gray-400">Double</div>
+            <div className="text-gray-400">Dbl</div>
           </div>
           <div className="text-center bg-orange-900/40 rounded px-1 py-1">
             <div className="font-bold text-white text-sm">{player.powerUpQuota.speedpot}</div>
             <div className="text-gray-400">Speed</div>
+          </div>
+          <div className="text-center bg-black/60 rounded px-1 py-1 ring-1 ring-yellow-600/50">
+            <div className="font-bold text-yellow-400 text-sm">{player.powerUpQuota.bbc}</div>
+            <div className="text-gray-400">BBC</div>
           </div>
         </div>
       </div>

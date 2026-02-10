@@ -72,26 +72,44 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
   // FASE 1: PRE-MATCH POWER-UPS (beide spelers)
   // ============================================================================
   
-  // TOEP voor Jesse
-  if (jessePowerUps.toep) {
-    jessePlayer.streak += 1;
-    jessePlayer.powerUpQuota.toep--;
-  }
-  
-  // TOEP voor Flip
-  if (flipPowerUps.toep) {
-    flipPlayer.streak += 1;
-    flipPlayer.powerUpQuota.toep--;
+  // TOEP voor Jesse (alleen in Regular mode, in Live Mode wordt het gebruikt voor toep/overtoep)
+  // Check if toepStakeMultiplier > 1, dan is TOEP gebruikt in Live Mode
+  if (toepStakeMultiplier > 1) {
+    // In Live Mode: Trek toep af voor elke toegepaste toep
+    // Elke toep/overtoep kost 1 power-up van de initiator
+    const toepCount = toepStakeMultiplier - 1; // Als stake 3 is, zijn er 2 toeps gebeurd
+    
+    // We weten niet exact wie welke toep heeft gedaan, maar we kunnen aannemen
+    // dat beide spelers evenredig hebben bijgedragen als ze allebei toep hebben in powerUps
+    if (jessePowerUps.toep) {
+      jessePlayer.powerUpQuota.toep = Math.max(0, jessePlayer.powerUpQuota.toep - 1);
+    }
+    if (flipPowerUps.toep) {
+      flipPlayer.powerUpQuota.toep = Math.max(0, flipPlayer.powerUpQuota.toep - 1);
+    }
+  } else {
+    // Regular mode: Toep geeft +1 streak
+    if (jessePowerUps.toep) {
+      jessePlayer.streak += 1;
+      jessePlayer.powerUpQuota.toep--;
+    }
+    
+    if (flipPowerUps.toep) {
+      flipPlayer.streak += 1;
+      flipPlayer.powerUpQuota.toep--;
+    }
   }
 
-  // PULL THE PLUG
-  if (jessePowerUps.pullThePlug) {
-    flipPlayer.streak = 0;
-    jessePlayer.powerUpQuota.pullThePlug--;
-  }
-  if (flipPowerUps.pullThePlug) {
-    jessePlayer.streak = 0;
-    flipPlayer.powerUpQuota.pullThePlug--;
+  // PULL THE PLUG (alleen als toepStakeMultiplier !== 0, want bij 0 is het een vooraf-actie)
+  if (toepStakeMultiplier !== 0) {
+    if (jessePowerUps.pullThePlug) {
+      flipPlayer.streak = 0;
+      jessePlayer.powerUpQuota.pullThePlug--;
+    }
+    if (flipPowerUps.pullThePlug) {
+      jessePlayer.streak = 0;
+      flipPlayer.powerUpQuota.pullThePlug--;
+    }
   }
 
   // CUMBACK KID - verliezer kan dit gebruiken

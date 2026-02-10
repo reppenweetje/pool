@@ -7,6 +7,7 @@ import PlayerCard from '@/components/PlayerCard';
 import MatchInputModal from '@/components/MatchInputModal';
 import MatchHistory from '@/components/MatchHistory';
 import LiveGameMode from '@/components/LiveGameMode';
+import PullThePlugButton from '@/components/PullThePlugButton';
 import { Plus, History, Settings, Trophy, RotateCcw, Zap, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -185,6 +186,33 @@ export default function Home() {
     }
   };
 
+  const handlePullThePlug = async (targetPlayer: 'jesse' | 'flip') => {
+    if (!gameState) return;
+    
+    // This is done before a match, just update the local state
+    const { calculateMatch } = await import('@/lib/streakEngine');
+    const { saveGameState } = await import('@/lib/storage');
+    
+    const powerUpsUsed = targetPlayer === 'jesse' 
+      ? { flip: { pullThePlug: true } as PowerUpUsage }
+      : { jesse: { pullThePlug: true } as PowerUpUsage };
+    
+    // Create a dummy match to apply pull the plug
+    const result = calculateMatch({
+      gameState,
+      winner: targetPlayer === 'jesse' ? 'Flip' : 'Jesse',
+      winCondition: 'normal',
+      opponentBallsRemaining: 0,
+      powerUpsUsed,
+      jesseOwnBalls: 0,
+      flipOwnBalls: 0,
+      toepStakeMultiplier: 0, // No streak change, just power-up effect
+    });
+    
+    setGameState(result.newGameState);
+    saveGameState(result.newGameState);
+  };
+
   const handleReset = async () => {
     if (!confirm('⚠️ WAARSCHUWING: Dit verwijdert ALLE data!\n\n- Alle potjes worden gewist\n- Alle streaks worden gereset\n- Alle power-ups worden gereset\n\nWeet je het ZEKER?')) {
       return;
@@ -302,11 +330,33 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Player Cards */}
+      {/* Player Cards with Pull The Plug */}
       {!showHistory && (
-        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-6 mb-6">
-          <PlayerCard player={gameState.jesse} isWinning={jesseWinning} />
-          <PlayerCard player={gameState.flip} isWinning={flipWinning} />
+        <div className="max-w-4xl mx-auto mb-6">
+          <div className="grid md:grid-cols-2 gap-6 relative">
+            <div className="relative">
+              <PlayerCard player={gameState.jesse} isWinning={jesseWinning} />
+              {/* Pull The Plug voor Flip (naast Jesse) */}
+              <div className="absolute -right-6 top-1/2 -translate-y-1/2 z-10">
+                <PullThePlugButton
+                  player="flip"
+                  available={gameState.flip.powerUpQuota.pullThePlug > 0}
+                  onUse={() => handlePullThePlug('jesse')}
+                />
+              </div>
+            </div>
+            <div className="relative">
+              <PlayerCard player={gameState.flip} isWinning={flipWinning} />
+              {/* Pull The Plug voor Jesse (naast Flip) */}
+              <div className="absolute -left-6 top-1/2 -translate-y-1/2 z-10">
+                <PullThePlugButton
+                  player="jesse"
+                  available={gameState.jesse.powerUpQuota.pullThePlug > 0}
+                  onUse={() => handlePullThePlug('flip')}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -325,28 +375,39 @@ export default function Home() {
         </motion.div>
       )}
 
-      {/* Floating Action Buttons */}
-      <div className="fixed bottom-8 right-8 flex flex-col gap-4">
-        {/* Live Game Button */}
+      {/* Floating Action Buttons - Live Mode is primair */}
+      <div className="fixed bottom-8 right-8 flex flex-col gap-3">
+        {/* Live Game Button - GROOT en primair */}
         <motion.button
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}
+          animate={{
+            boxShadow: [
+              '0 0 20px rgba(250, 204, 21, 0.5)',
+              '0 0 40px rgba(251, 146, 60, 0.7)',
+              '0 0 20px rgba(250, 204, 21, 0.5)',
+            ],
+          }}
+          transition={{ duration: 2, repeat: Infinity }}
           onClick={() => setIsLiveMode(true)}
-          className="w-16 h-16 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-full shadow-2xl flex items-center justify-center text-white hover:shadow-yellow-500/50 transition-shadow"
+          className="w-20 h-20 bg-gradient-to-br from-yellow-500 via-orange-500 to-orange-600 rounded-full shadow-2xl flex items-center justify-center text-white relative"
           title="Live Potje (met TOEP)"
         >
-          <Zap className="w-8 h-8" fill="currentColor" />
+          <Zap className="w-10 h-10" fill="currentColor" />
+          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">
+            LIVE
+          </div>
         </motion.button>
 
-        {/* Regular Match Button */}
+        {/* Regular Match Button - kleiner */}
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={() => setIsModalOpen(true)}
-          className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full shadow-2xl flex items-center justify-center text-white hover:shadow-green-500/50 transition-shadow"
-          title="Regulier Potje"
+          className="w-12 h-12 bg-gradient-to-br from-gray-600 to-gray-700 rounded-full shadow-lg flex items-center justify-center text-gray-300 hover:shadow-green-500/30 transition-all opacity-70 hover:opacity-100"
+          title="Reeds gespeeld potje toevoegen"
         >
-          <Plus className="w-8 h-8" />
+          <Plus className="w-6 h-6" />
         </motion.button>
       </div>
 

@@ -119,39 +119,31 @@ export default function ToepModal({
             </p>
           </div>
 
-          {/* Consequences */}
-          <div className="grid grid-cols-2 gap-4 mb-6 bg-black/30 p-4 rounded-2xl">
-            <div className="text-center">
-              <Check className="w-8 h-8 text-green-400 mx-auto mb-2" />
-              <div className="text-sm font-bold text-green-400 mb-1">ACCEPTEREN</div>
-              <div className="text-xs text-gray-400">Speel om {currentStake + 1} streaks</div>
-            </div>
-            <div className="text-center">
-              <X className="w-8 h-8 text-red-400 mx-auto mb-2" />
-              <div className="text-sm font-bold text-red-400 mb-1">WEIGEREN</div>
-              <div className="text-xs text-gray-400">Verlies direct (1 streak)</div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
+          {/* Action Buttons met Uitleg */}
           <div className="grid grid-cols-2 gap-4">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onAccept}
-              className="pool-button bg-gradient-to-br from-green-600 to-green-500 text-white hover:from-green-500 hover:to-green-400 shadow-lg shadow-green-500/50"
+              className="pool-button bg-gradient-to-br from-green-600 to-green-500 text-white hover:from-green-500 hover:to-green-400 shadow-lg shadow-green-500/50 flex flex-col items-center justify-center gap-2"
             >
-              <Check className="w-6 h-6 inline mr-2" />
-              ACCEPTEREN
+              <Check className="w-8 h-8" />
+              <div className="text-lg font-black">ACCEPTEREN</div>
+              <div className="text-xs opacity-90">
+                Speel om {currentStake + 1} streak{currentStake + 1 > 1 ? 's' : ''}
+              </div>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={onReject}
-              className="pool-button bg-gradient-to-br from-red-600 to-red-500 text-white hover:from-red-500 hover:to-red-400 shadow-lg shadow-red-500/50"
+              className="pool-button bg-gradient-to-br from-red-600 to-red-500 text-white hover:from-red-500 hover:to-red-400 shadow-lg shadow-red-500/50 flex flex-col items-center justify-center gap-2"
             >
-              <X className="w-6 h-6 inline mr-2" />
-              WEIGEREN
+              <X className="w-8 h-8" />
+              <div className="text-lg font-black">WEIGEREN</div>
+              <div className="text-xs opacity-90">
+                Verlies direct (1 streak)
+              </div>
             </motion.button>
           </div>
 
