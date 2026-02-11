@@ -100,16 +100,14 @@ export function calculateMatch(params: CalculateMatchParams): CalculateMatchResu
     }
   }
 
-  // PULL THE PLUG (alleen als toepStakeMultiplier !== 0, want bij 0 is het een vooraf-actie)
-  if (toepStakeMultiplier !== 0) {
-    if (jessePowerUps.pullThePlug) {
-      flipPlayer.streak = 0;
-      jessePlayer.powerUpQuota.pullThePlug--;
-    }
-    if (flipPowerUps.pullThePlug) {
-      jessePlayer.streak = 0;
-      flipPlayer.powerUpQuota.pullThePlug--;
-    }
+  // PULL THE PLUG - reset tegenstander streak, trek quota af (ook bij vooraf-actie!)
+  if (jessePowerUps.pullThePlug) {
+    flipPlayer.streak = 0;
+    jessePlayer.powerUpQuota.pullThePlug--;
+  }
+  if (flipPowerUps.pullThePlug) {
+    jessePlayer.streak = 0;
+    flipPlayer.powerUpQuota.pullThePlug--;
   }
 
   // CUMBACK KID - verliezer kan dit gebruiken

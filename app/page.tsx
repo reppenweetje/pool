@@ -193,7 +193,6 @@ export default function Home() {
   const handlePullThePlug = async (targetPlayer: 'jesse' | 'flip') => {
     if (!gameState) return;
     
-    // This is done before a match, just update the local state
     const { calculateMatch } = await import('@/lib/streakEngine');
     const { saveGameState } = await import('@/lib/storage');
     
@@ -201,7 +200,6 @@ export default function Home() {
       ? { flip: { pullThePlug: true } as PowerUpUsage }
       : { jesse: { pullThePlug: true } as PowerUpUsage };
     
-    // Create a dummy match to apply pull the plug
     const result = calculateMatch({
       gameState,
       winner: targetPlayer === 'jesse' ? 'Flip' : 'Jesse',
@@ -210,11 +208,26 @@ export default function Home() {
       powerUpsUsed,
       jesseOwnBalls: 0,
       flipOwnBalls: 0,
-      toepStakeMultiplier: 0, // No streak change, just power-up effect
+      toepStakeMultiplier: 0,
     });
     
     setGameState(result.newGameState);
     saveGameState(result.newGameState);
+    
+    // Persist naar database (quota wordt afgetrokken)
+    try {
+      const res = await fetch('/api/game-state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result.newGameState),
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        setGameState(saved);
+      }
+    } catch (error) {
+      console.error('Failed to save Pull The Plug:', error);
+    }
   };
 
   const handleCumbackKid = async (userPlayer: 'jesse' | 'flip') => {
