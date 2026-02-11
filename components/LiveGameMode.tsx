@@ -23,27 +23,66 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
   const [flipPowerUps, setFlipPowerUps] = useState<PowerUpUsage>({});
   const [showPowerUpFlash, setShowPowerUpFlash] = useState(false);
   const [lastPowerUp, setLastPowerUp] = useState({ player: '', name: '' });
+  
+  // Nieuw: keuze-modus - voorkomt dat polling het startscherm overschrijft
+  const [showChoiceModal, setShowChoiceModal] = useState(false);
+  const [existingGameOnOpen, setExistingGameOnOpen] = useState<LiveGame | null>(null);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
-  // Polling interval - check elke 2 seconden voor updates
+  // Eerste check bij openen - GEEN polling tot we een keuze hebben gemaakt
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setInitialCheckDone(false);
+      setShowChoiceModal(false);
+      setExistingGameOnOpen(null);
+      setLiveGame(null);
+      return;
+    }
+
+    const doInitialCheck = async () => {
+      try {
+        const res = await fetch('/api/live-game');
+        const data = await res.json();
+        setInitialCheckDone(true);
+        
+        if (data && !data.error && data.id) {
+          // Er is een actief potje - toon keuze
+          setExistingGameOnOpen(data);
+          setShowChoiceModal(true);
+          setLiveGame(null); // Niet direct tonen!
+        } else {
+          // Geen actief potje - toon start scherm
+          setExistingGameOnOpen(null);
+          setShowChoiceModal(false);
+          setLiveGame(null);
+        }
+      } catch (error) {
+        console.error('Failed to check live game:', error);
+        setInitialCheckDone(true);
+        setLiveGame(null);
+      }
+    };
+
+    doInitialCheck();
+  }, [isOpen]);
+
+  // Polling ALLEEN wanneer we daadwerkelijk een game hebben (niet bij keuze-modus)
+  useEffect(() => {
+    if (!isOpen || !liveGame || showChoiceModal) return;
 
     const fetchLiveGame = async () => {
       try {
         const res = await fetch('/api/live-game');
         const data = await res.json();
         
-        if (data && !data.error) {
+        if (data && !data.error && data.id === liveGame.id) {
           setLiveGame(data);
-          
-          // Show toep modal if there's a pending toep
           if (data.toepResponse === 'pending') {
             setShowToepModal(true);
           } else {
             setShowToepModal(false);
           }
-        } else {
-          // Geen active game meer (bijv. na finish)
+        } else if (!data || data.error) {
           setLiveGame(null);
         }
       } catch (error) {
@@ -51,33 +90,17 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
       }
     };
 
-    fetchLiveGame();
     const interval = setInterval(fetchLiveGame, 2000);
-
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, liveGame?.id, showChoiceModal]);
 
-  const startLiveGame = async () => {
+  const startNewGame = async () => {
     setLoading(true);
+    setShowChoiceModal(false);
+    setExistingGameOnOpen(null);
+    
     try {
-      // Check if there's already an active game and cancel it first
-      const checkRes = await fetch('/api/live-game');
-      const existingGame = await checkRes.json();
-      
-      if (existingGame && !existingGame.error && existingGame.id) {
-        // Cancel the old game explicitly
-        await fetch('/api/live-game', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'update',
-            liveGameId: existingGame.id,
-            status: 'cancelled',
-          }),
-        });
-      }
-      
-      // ALTIJD een nieuwe game maken (oude wordt ook gecancelled in createLiveGame)
+      // POST maakt altijd nieuwe game en cancelled oude in de backend
       const res = await fetch('/api/live-game', { method: 'POST' });
       
       if (!res.ok) {
@@ -86,10 +109,7 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
       }
       
       const newGame = await res.json();
-      console.log('New game created with stake:', newGame.currentToepStake); // Debug
       setLiveGame(newGame);
-      
-      // Reset power-ups state voor nieuwe game
       setJessePowerUps({});
       setFlipPowerUps({});
     } catch (error) {
@@ -98,6 +118,30 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
       onClose();
     }
     setLoading(false);
+  };
+
+  const continueExistingGame = () => {
+    if (existingGameOnOpen) {
+      setLiveGame(existingGameOnOpen);
+      setShowChoiceModal(false);
+      setExistingGameOnOpen(null);
+    }
+  };
+
+  const handleStartClick = () => {
+    if (showChoiceModal) {
+      // Dubbele bevestiging bij bestaand potje
+      if (confirm('Weet je zeker dat je een NIEUW potje wilt starten? Het huidige potje wordt afgebroken.')) {
+        if (confirm('Laatste bevestiging: Nieuw potje starten? Het oude potje gaat verloren.')) {
+          startNewGame();
+        }
+      }
+    } else {
+      // Geen bestaand potje - direct starten
+      if (confirm('Wil je een nieuw live potje starten?')) {
+        startNewGame();
+      }
+    }
   };
 
   const handleToep = async (player: PlayerName) => {
@@ -286,10 +330,7 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
   if (!isOpen) return null;
 
   const responder = liveGame?.toepInitiatedBy === 'Jesse' ? 'Flip' : 'Jesse';
-  const currentStake = liveGame?.currentToepStake ?? 0; // ?? ipv || om 0 correct te hanteren
-  
-  // Debug log
-  console.log('LiveGame state:', { currentStake, toepInitiatedBy: liveGame?.toepInitiatedBy, toepResponse: liveGame?.toepResponse });
+  const currentStake = liveGame?.currentToepStake ?? 0;
   
   // Jesse kan toepen als:
   // 1. Er is geen pending toep (toepResponse !== 'pending')
@@ -304,7 +345,6 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
     (!liveGame?.toepInitiatedBy || liveGame.toepInitiatedBy === 'Jesse');
   
   const toepButtonText = currentStake === 0 ? 'TOEP' : 'OVERTOEP';
-  console.log('Button text:', toepButtonText, 'for stake:', currentStake);
 
   return (
     <AnimatePresence>
@@ -337,14 +377,42 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
           {!liveGame ? (
             <div className="text-center py-12">
               <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-              <p className="text-white text-lg mb-6">Start een nieuw live potje</p>
-              <button
-                onClick={startLiveGame}
-                disabled={loading}
-                className="pool-button bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-500 hover:to-green-400 disabled:opacity-50"
-              >
-                {loading ? 'Bezig...' : 'Start Live Potje'}
-              </button>
+              <p className="text-white text-lg mb-6">
+                {!initialCheckDone ? 'Even laden...' : 
+                 showChoiceModal ? 'Er is al een actief potje.' : 
+                 'Start een nieuw live potje'}
+              </p>
+              
+              {initialCheckDone && (
+                <div className="flex flex-col gap-3 max-w-xs mx-auto">
+                  {showChoiceModal ? (
+                    <>
+                      <button
+                        onClick={handleStartClick}
+                        disabled={loading}
+                        className="pool-button bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 disabled:opacity-50"
+                      >
+                        {loading ? 'Bezig...' : 'Nieuw potje starten'}
+                      </button>
+                      <button
+                        onClick={continueExistingGame}
+                        disabled={loading}
+                        className="pool-button bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-500 hover:to-green-400"
+                      >
+                        Doorgaan met bestaand potje
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={handleStartClick}
+                      disabled={loading}
+                      className="pool-button bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-500 hover:to-green-400 disabled:opacity-50"
+                    >
+                      {loading ? 'Bezig...' : 'Start Live Potje'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <>
