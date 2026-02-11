@@ -157,7 +157,7 @@ export default function Home() {
       const newState = await res.json();
       setGameState(newState);
 
-      // Close live game
+      // Close live game - set to 'finished' which acts as cancelled
       await fetch('/api/live-game', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -167,6 +167,8 @@ export default function Home() {
           status: 'finished',
         }),
       });
+      
+      console.log('Live game finished, status set to finished');
     } catch (error) {
       console.error('Failed to finish live game:', error);
       alert('Er ging iets mis bij het afronden van het potje');

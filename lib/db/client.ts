@@ -199,11 +199,11 @@ export async function createLiveGame(): Promise<LiveGame> {
 
     const sessionId = sessionRows[0].id;
 
-    // Cancel ANY existing active games (niet alleen voor deze sessie)
+    // Cancel ANY existing active OR finished games (niet alleen voor deze sessie)
     await sql`
       UPDATE live_games 
       SET status = 'cancelled', last_action_at = NOW()
-      WHERE status = 'active'
+      WHERE status IN ('active', 'finished')
     `;
 
     // Wacht even zodat de update zeker doorkomt

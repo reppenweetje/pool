@@ -23,7 +23,9 @@ export default function ToepModal({
 }: ToepModalProps) {
   if (!isOpen) return null;
 
-  const isFirstToep = currentStake === 0;
+  // Als currentStake 1 is, dan is het de EERSTE toep (0→1)
+  // Als currentStake > 1 is, dan is het een OVERtoep (1→2, 2→3, etc)
+  const isFirstToep = currentStake === 1;
   const actionWord = isFirstToep ? 'GETOEPT' : 'OVERGETOEPT';
   const newStake = currentStake + 1;
 
