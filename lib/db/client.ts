@@ -315,25 +315,28 @@ export async function respondToToep(liveGameId: number, response: 'accepted' | '
 
 export async function updateLiveGame(liveGameId: number, updates: Partial<LiveGame>): Promise<void> {
   try {
-    const setClauses: string[] = ['last_action_at = NOW()'];
-    const values: any[] = [];
-
+    // @vercel/postgres gebruikt sql`...` template, NIET sql.query()!
+    if (updates.status !== undefined) {
+      await sql`
+        UPDATE live_games 
+        SET status = ${updates.status}, last_action_at = NOW()
+        WHERE id = ${liveGameId}
+      `;
+    }
     if (updates.jesseBallsRemaining !== undefined) {
-      setClauses.push(`jesse_balls_remaining = $${values.length + 1}`);
-      values.push(updates.jesseBallsRemaining);
+      await sql`
+        UPDATE live_games 
+        SET jesse_balls_remaining = ${updates.jesseBallsRemaining}, last_action_at = NOW()
+        WHERE id = ${liveGameId}
+      `;
     }
     if (updates.flipBallsRemaining !== undefined) {
-      setClauses.push(`flip_balls_remaining = $${values.length + 1}`);
-      values.push(updates.flipBallsRemaining);
+      await sql`
+        UPDATE live_games 
+        SET flip_balls_remaining = ${updates.flipBallsRemaining}, last_action_at = NOW()
+        WHERE id = ${liveGameId}
+      `;
     }
-    if (updates.status !== undefined) {
-      setClauses.push(`status = $${values.length + 1}`);
-      values.push(updates.status);
-    }
-
-    await sql.query(
-      `UPDATE live_games SET ${setClauses.join(', ')} WHERE id = ${liveGameId}`
-    );
   } catch (error) {
     console.error('Failed to update live game:', error);
     throw error;
