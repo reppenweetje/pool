@@ -310,19 +310,32 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
 
   const handleFinishGame = (winner: PlayerName) => {
     if (!liveGame) return;
-    onFinish(
-      winner, 
-      liveGame.jesseBallsRemaining, 
-      liveGame.flipBallsRemaining, 
-      liveGame.currentToepStake,
-      {
-        jesse: Object.keys(jessePowerUps).length > 0 ? jessePowerUps : undefined,
-        flip: Object.keys(flipPowerUps).length > 0 ? flipPowerUps : undefined,
-      }
-    );
-    onClose();
     
-    // Reset voor volgend potje
+    const ballenbakUsed = jessePowerUps.ballenBak || flipPowerUps.ballenBak;
+    let jesseBalls = liveGame.jesseBallsRemaining;
+    let flipBalls = liveGame.flipBallsRemaining;
+    
+    if (ballenbakUsed) {
+      const loserName = winner === 'Jesse' ? 'Flip' : 'Jesse';
+      const currentLoserBalls = winner === 'Jesse' ? flipBalls : jesseBalls;
+      const answer = prompt(
+        `Ballenbak was ingezet! Winnaar krijgt €2 extra per bal die ${loserName} over had.\n\nHoeveel ballen had ${loserName} nog over?`,
+        String(currentLoserBalls)
+      );
+      if (answer === null) return;
+      const balls = Math.min(7, Math.max(0, Number(answer) || 0));
+      if (winner === 'Jesse') {
+        flipBalls = balls;
+      } else {
+        jesseBalls = balls;
+      }
+    }
+    
+    onFinish(winner, jesseBalls, flipBalls, liveGame.currentToepStake, {
+      jesse: Object.keys(jessePowerUps).length > 0 ? jessePowerUps : undefined,
+      flip: Object.keys(flipPowerUps).length > 0 ? flipPowerUps : undefined,
+    });
+    onClose();
     setJessePowerUps({});
     setFlipPowerUps({});
   };
@@ -453,32 +466,38 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                   <h3 className="text-xs font-bold text-purple-300 uppercase">Power-ups</h3>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Jesse Power-ups */}
+                  {/* Jesse Power-ups - met aantallen (limiet) */}
                   <div className="space-y-2">
-                    <p className="text-xs text-blue-300 font-semibold">Jesse ({gameState?.jesse.powerUpQuota.toep || 0} toeps)</p>
+                    <p className="text-xs text-blue-300 font-semibold">Jesse (Toep: {gameState?.jesse.powerUpQuota.toep || 0})</p>
                     <div className="flex flex-wrap gap-1.5">
                       {gameState?.jesse.powerUpQuota.ballenBak > 0 && (
                         <button
                           onClick={() => togglePowerUp('jesse', 'ballenBak')}
                           className={`px-2 py-1 text-xs rounded font-bold transition-all ${
-                            jessePowerUps.ballenBak
-                              ? 'bg-red-600 text-white shadow-lg'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            jessePowerUps.ballenBak ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          Ballenbak
+                          Ballenbak ({gameState.jesse.powerUpQuota.ballenBak})
                         </button>
                       )}
                       {gameState?.jesse.powerUpQuota.bbc > 0 && (
                         <button
                           onClick={() => togglePowerUp('jesse', 'bbc')}
                           className={`px-2 py-1 text-xs rounded font-bold transition-all ${
-                            jessePowerUps.bbc
-                              ? 'bg-black text-yellow-400 ring-1 ring-yellow-400 shadow-lg'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            jessePowerUps.bbc ? 'bg-black text-yellow-400 ring-1 ring-yellow-400 shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          BBC +€5
+                          BBC ({gameState.jesse.powerUpQuota.bbc})
+                        </button>
+                      )}
+                      {gameState?.jesse.powerUpQuota.speedpot > 0 && (
+                        <button
+                          onClick={() => togglePowerUp('jesse', 'speedpot')}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            jessePowerUps.speedpot ? 'bg-orange-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          Speedpot ({gameState.jesse.powerUpQuota.speedpot})
                         </button>
                       )}
                       {gameState?.jesse.powerUpQuota.sniper > 0 && (
@@ -487,65 +506,67 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                             const balls = prompt('Hoeveel ballen achter elkaar? (3+)');
                             if (balls && Number(balls) >= 3) {
                               togglePowerUp('jesse', 'sniper');
-                              setJessePowerUps(prev => ({ ...prev, sniper: { ballsPotted: Number(balls), successful: true }}));
+                              setJessePowerUps(prev => ({ ...prev, sniper: { ballsPotted: Number(balls), successful: true } }));
                             }
                           }}
                           className={`px-2 py-1 text-xs rounded font-bold transition-all ${
-                            jessePowerUps.sniper
-                              ? 'bg-yellow-600 text-white shadow-lg'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            jessePowerUps.sniper ? 'bg-yellow-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          Sniper
+                          Sniper ({gameState.jesse.powerUpQuota.sniper})
                         </button>
                       )}
                       {gameState?.jesse.powerUpQuota.doubleTrouble > 0 && (
                         <button
                           onClick={() => {
-                            const balls = prompt('Hoeveel ballen achter elkaar? (3+)');
+                            const balls = prompt('2 ballen in 1 stoot? Hoeveel totaal in reeks? (3+)');
                             if (balls && Number(balls) >= 3) {
                               togglePowerUp('jesse', 'doubleTrouble');
-                              setJessePowerUps(prev => ({ ...prev, doubleTrouble: { ballsPotted: Number(balls), successful: true }}));
+                              setJessePowerUps(prev => ({ ...prev, doubleTrouble: { ballsPotted: Number(balls), successful: true } }));
                             }
                           }}
                           className={`px-2 py-1 text-xs rounded font-bold transition-all ${
-                            jessePowerUps.doubleTrouble
-                              ? 'bg-pink-600 text-white shadow-lg'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            jessePowerUps.doubleTrouble ? 'bg-pink-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          Double
+                          Double Trouble ({gameState.jesse.powerUpQuota.doubleTrouble})
                         </button>
                       )}
                     </div>
                   </div>
                   
-                  {/* Flip Power-ups */}
+                  {/* Flip Power-ups - met aantallen (limiet) */}
                   <div className="space-y-2">
-                    <p className="text-xs text-orange-300 font-semibold">Flip ({gameState?.flip.powerUpQuota.toep || 0} toeps)</p>
+                    <p className="text-xs text-orange-300 font-semibold">Flip (Toep: {gameState?.flip.powerUpQuota.toep || 0})</p>
                     <div className="flex flex-wrap gap-1.5">
                       {gameState?.flip.powerUpQuota.ballenBak > 0 && (
                         <button
                           onClick={() => togglePowerUp('flip', 'ballenBak')}
                           className={`px-2 py-1 text-xs rounded font-bold transition-all ${
-                            flipPowerUps.ballenBak
-                              ? 'bg-red-600 text-white shadow-lg'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            flipPowerUps.ballenBak ? 'bg-red-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          Ballenbak
+                          Ballenbak ({gameState.flip.powerUpQuota.ballenBak})
                         </button>
                       )}
                       {gameState?.flip.powerUpQuota.bbc > 0 && (
                         <button
                           onClick={() => togglePowerUp('flip', 'bbc')}
                           className={`px-2 py-1 text-xs rounded font-bold transition-all ${
-                            flipPowerUps.bbc
-                              ? 'bg-black text-yellow-400 ring-1 ring-yellow-400 shadow-lg'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            flipPowerUps.bbc ? 'bg-black text-yellow-400 ring-1 ring-yellow-400 shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          BBC +€5
+                          BBC ({gameState.flip.powerUpQuota.bbc})
+                        </button>
+                      )}
+                      {gameState?.flip.powerUpQuota.speedpot > 0 && (
+                        <button
+                          onClick={() => togglePowerUp('flip', 'speedpot')}
+                          className={`px-2 py-1 text-xs rounded font-bold transition-all ${
+                            flipPowerUps.speedpot ? 'bg-orange-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          }`}
+                        >
+                          Speedpot ({gameState.flip.powerUpQuota.speedpot})
                         </button>
                       )}
                       {gameState?.flip.powerUpQuota.sniper > 0 && (
@@ -554,34 +575,30 @@ export default function LiveGameMode({ isOpen, onClose, onFinish, gameState }: L
                             const balls = prompt('Hoeveel ballen achter elkaar? (3+)');
                             if (balls && Number(balls) >= 3) {
                               togglePowerUp('flip', 'sniper');
-                              setFlipPowerUps(prev => ({ ...prev, sniper: { ballsPotted: Number(balls), successful: true }}));
+                              setFlipPowerUps(prev => ({ ...prev, sniper: { ballsPotted: Number(balls), successful: true } }));
                             }
                           }}
                           className={`px-2 py-1 text-xs rounded font-bold transition-all ${
-                            flipPowerUps.sniper
-                              ? 'bg-yellow-600 text-white shadow-lg'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            flipPowerUps.sniper ? 'bg-yellow-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          Sniper
+                          Sniper ({gameState.flip.powerUpQuota.sniper})
                         </button>
                       )}
                       {gameState?.flip.powerUpQuota.doubleTrouble > 0 && (
                         <button
                           onClick={() => {
-                            const balls = prompt('Hoeveel ballen achter elkaar? (3+)');
+                            const balls = prompt('2 ballen in 1 stoot? Hoeveel totaal in reeks? (3+)');
                             if (balls && Number(balls) >= 3) {
                               togglePowerUp('flip', 'doubleTrouble');
-                              setFlipPowerUps(prev => ({ ...prev, doubleTrouble: { ballsPotted: Number(balls), successful: true }}));
+                              setFlipPowerUps(prev => ({ ...prev, doubleTrouble: { ballsPotted: Number(balls), successful: true } }));
                             }
                           }}
                           className={`px-2 py-1 text-xs rounded font-bold transition-all ${
-                            flipPowerUps.doubleTrouble
-                              ? 'bg-pink-600 text-white shadow-lg'
-                              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                            flipPowerUps.doubleTrouble ? 'bg-pink-600 text-white shadow-lg' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                           }`}
                         >
-                          Double
+                          Double Trouble ({gameState.flip.powerUpQuota.doubleTrouble})
                         </button>
                       )}
                     </div>

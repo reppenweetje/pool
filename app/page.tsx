@@ -9,7 +9,8 @@ import MatchHistory from '@/components/MatchHistory';
 import LiveGameMode from '@/components/LiveGameMode';
 import PullThePlugButton from '@/components/PullThePlugButton';
 import CumbackKidButton from '@/components/CumbackKidButton';
-import { Plus, History, Settings, Trophy, RotateCcw, Zap, AlertTriangle } from 'lucide-react';
+import RulesModal from '@/components/RulesModal';
+import { Plus, History, Settings, Trophy, RotateCcw, Zap, AlertTriangle, BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Home() {
@@ -18,6 +19,7 @@ export default function Home() {
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Load game state from database
@@ -124,18 +126,12 @@ export default function Home() {
   };
 
   const handleLiveGameFinish = async (winner: PlayerName, jesseBalls: number, flipBalls: number, toepStake: number, powerUpsUsed: { jesse?: PowerUpUsage; flip?: PowerUpUsage }) => {
-    // Fetch live game voor toep stake
     try {
       const liveRes = await fetch('/api/live-game');
       const liveGame = await liveRes.json();
 
-      // BELANGRIJK: currentToepStake kan 0 zijn! Gebruik ?? in plaats van ||
-      const toepStake = liveGame?.currentToepStake ?? 1;
-      const loser: PlayerName = winner === 'Jesse' ? 'Flip' : 'Jesse';
       const opponentBalls = winner === 'Jesse' ? flipBalls : jesseBalls;
-
-      // Use the toepStake directly (already handled in LiveGameMode)
-      const actualStake = toepStake + 1; // +1 omdat stake 0 = 1 streak, stake 1 = 2 streaks etc.
+      const actualStake = (toepStake ?? 0) + 1; // stake 0 = 1 streak, stake 1 = 2 streaks
 
       // Save match via API met toep multiplier en power-ups
       const res = await fetch('/api/matches', {
@@ -336,6 +332,13 @@ export default function Home() {
           </div>
           <div className="flex gap-2">
             <button
+              onClick={() => setShowRules(true)}
+              className="p-3 rounded-xl transition-colors bg-gray-700 text-gray-300 hover:bg-yellow-600 hover:text-white"
+              title="Regels"
+            >
+              <BookOpen className="w-6 h-6" />
+            </button>
+            <button
               onClick={() => setShowHistory(!showHistory)}
               className={`p-3 rounded-xl transition-colors ${
                 showHistory ? 'bg-green-600 text-white' : 'bg-gray-700 text-gray-300'
@@ -513,6 +516,9 @@ export default function Home() {
         onFinish={handleLiveGameFinish}
         gameState={gameState}
       />
+
+      {/* Regels Modal */}
+      <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />
     </main>
   );
 }

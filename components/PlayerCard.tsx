@@ -131,19 +131,15 @@ export default function PlayerCard({ player, isWinning }: PlayerCardProps) {
         </div>
       </div>
 
-      {/* Power-ups samenvatting - Extra compact voor mobile */}
+      {/* Power-ups samenvatting - Zonder Plug & CMB (staan groot eronder) */}
       <div className="pt-1.5 border-t border-white/20">
         <div className="text-[9px] md:text-[10px] text-gray-400 uppercase tracking-wide mb-1">
           Power-ups
         </div>
-        <div className="grid grid-cols-5 gap-0.5 md:gap-1 text-[9px] md:text-[10px]">
+        <div className="grid grid-cols-4 gap-0.5 md:gap-1 text-[9px] md:text-[10px]">
           <div className="text-center bg-purple-900/40 rounded px-0.5 md:px-1 py-0.5 md:py-1">
             <div className="font-bold text-white text-xs md:text-sm">{player.powerUpQuota.ballenBakBizarre}</div>
             <div className="text-gray-400 text-[8px] md:text-[10px]">BBB</div>
-          </div>
-          <div className="text-center bg-green-900/40 rounded px-0.5 md:px-1 py-0.5 md:py-1">
-            <div className="font-bold text-white text-xs md:text-sm">{player.powerUpQuota.cumbackKid}</div>
-            <div className="text-gray-400 text-[8px] md:text-[10px]">Cmb</div>
           </div>
           <div className="text-center bg-blue-900/40 rounded px-0.5 md:px-1 py-0.5 md:py-1">
             <div className="font-bold text-white text-xs md:text-sm">{player.powerUpQuota.toep}</div>
@@ -153,19 +149,15 @@ export default function PlayerCard({ player, isWinning }: PlayerCardProps) {
             <div className="font-bold text-white text-xs md:text-sm">{player.powerUpQuota.ballenBak}</div>
             <div className="text-gray-400 text-[8px] md:text-[10px]">BB</div>
           </div>
-          <div className="text-center bg-red-800/40 rounded px-0.5 md:px-1 py-0.5 md:py-1">
-            <div className="font-bold text-white text-xs md:text-sm">{player.powerUpQuota.pullThePlug}</div>
-            <div className="text-gray-400 text-[8px] md:text-[10px]">Plug</div>
-          </div>
-        </div>
-        <div className="grid grid-cols-4 gap-0.5 md:gap-1 text-[9px] md:text-[10px] mt-0.5 md:mt-1">
           <div className="text-center bg-yellow-900/40 rounded px-0.5 md:px-1 py-0.5 md:py-1">
             <div className="font-bold text-white text-xs md:text-sm">{player.powerUpQuota.sniper}</div>
             <div className="text-gray-400 text-[8px] md:text-[10px]">Sniper</div>
           </div>
+        </div>
+        <div className="grid grid-cols-3 gap-0.5 md:gap-1 text-[9px] md:text-[10px] mt-0.5 md:mt-1">
           <div className="text-center bg-pink-900/40 rounded px-0.5 md:px-1 py-0.5 md:py-1">
             <div className="font-bold text-white text-xs md:text-sm">{player.powerUpQuota.doubleTrouble}</div>
-            <div className="text-gray-400 text-[8px] md:text-[10px]">Dbl</div>
+            <div className="text-gray-400 text-[8px] md:text-[10px]">DT</div>
           </div>
           <div className="text-center bg-orange-900/40 rounded px-0.5 md:px-1 py-0.5 md:py-1">
             <div className="font-bold text-white text-xs md:text-sm">{player.powerUpQuota.speedpot}</div>
