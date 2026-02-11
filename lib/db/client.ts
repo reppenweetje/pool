@@ -199,17 +199,20 @@ export async function createLiveGame(): Promise<LiveGame> {
 
     const sessionId = sessionRows[0].id;
 
-    // Cancel any existing active games
+    // Cancel ANY existing active games (niet alleen voor deze sessie)
     await sql`
       UPDATE live_games 
-      SET status = 'cancelled'
-      WHERE session_id = ${sessionId} AND status = 'active'
+      SET status = 'cancelled', last_action_at = NOW()
+      WHERE status = 'active'
     `;
+
+    // Wacht even zodat de update zeker doorkomt
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     // Create new live game - expliciet current_toep_stake op 0 zetten!
     const { rows } = await sql`
-      INSERT INTO live_games (session_id, current_toep_stake)
-      VALUES (${sessionId}, 0)
+      INSERT INTO live_games (session_id, current_toep_stake, toep_initiated_by, toep_response)
+      VALUES (${sessionId}, 0, NULL, NULL)
       RETURNING *
     `;
 
